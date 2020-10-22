@@ -1,0 +1,17 @@
+DATABASE test4gl
+SCREEN
+{
+ Code Name
+ [f001] [f002 ]
+ [f001] [f002 ]
+ [f001] [f002 ]
+ [f001] [f002 ]
+ [f001] [f002 ]
+}
+TABLES
+manufact
+ATTRIBUTES
+f001 = manufact.manu_code;
+f002 = manufact.manu_name;
+INSTRUCTIONS
+SCREEN RECORD sa_manuf[5] (manufact.manu_code THRU manufact.manu_name)
