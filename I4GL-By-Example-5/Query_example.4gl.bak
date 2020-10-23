@@ -22,6 +22,7 @@ FUNCTION query_cust1()
 ########################################
  DEFINE q_cust CHAR(200),
  selstmt CHAR(250),
+ answer CHAR(1),
  found_some SMALLINT,
  invalid_resp SMALLINT
 WHILE TRUE
@@ -49,11 +50,11 @@ DISPLAY
  AT 15, 1
 --* Check to see if user has entered search criteria
 IF q_cust = " 1=1" THEN
- IF NOT answer("Do you really want to see all customers? (n/y):")
+ IF NOT answer_yes("Do you really want to see all customers? (n/y):")
  THEN
  CONTINUE WHILE
  END IF
-END IF
+ END IF
 --* Create and prepare the SELECT statement
 LET selstmt = "SELECT * FROM customer WHERE ", q_cust CLIPPED
 PREPARE st_selcust FROM selstmt
@@ -76,7 +77,7 @@ FETCH NEXT c_cust INTO gr_customer.*
  EXIT WHILE
  END IF
 --* Ask user if going to view next row
-IF NOT answer("Display next customer? (n/y):") THEN
+IF NOT answer_yes("Display next customer? (n/y):") THEN
  LET found_some = -2
  END IF
  END WHILE
@@ -98,29 +99,25 @@ DISPLAY
 END FUNCTION -- query_cust1 --
 
 ########################################
-FUNCTION answer(question)
+FUNCTION answer_yes(question)
 ########################################
  DEFINE question CHAR(50),
  invalid_resp SMALLINT,
- _answer CHAR(1),
+ answer CHAR(1),
  ans_yes SMALLINT
 LET invalid_resp = TRUE
  WHILE invalid_resp
-PROMPT question CLIPPED FOR _answer
-IF _answer MATCHES "[NnYy]" THEN
+PROMPT question CLIPPED FOR answer
+IF answer MATCHES "[NnYy]" THEN
  LET invalid_resp = FALSE
  LET ans_yes = TRUE
- IF _answer MATCHES "[Nn]" THEN
+ IF answer MATCHES "[Nn]" THEN
  LET ans_yes = FALSE
  END IF
-END IF
-IF _answer MATCHES "[EeQq]" THEN
-	EXIT PROGRAM
-END IF
+ END IF
  END WHILE
  RETURN ans_yes
-END FUNCTION -- answer --
-
+END FUNCTION -- answer_yes --
 
 ########################################
 FUNCTION msg(str)

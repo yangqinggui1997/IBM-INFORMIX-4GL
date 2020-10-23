@@ -1,13 +1,12 @@
 DATABASE test4gl
 SCREEN
 {
-
  Customer Number :[f000 ] Company Name :[f001 ]
  Address: [f002 ]
  [f003 ]
  City : [f004 ] State:[f5] Zip Code:[f006 ]
  Contact Name: [f007 ][f008 ]
- Telephone : [f009              ]
+ Telephone : [f009               ]
 }
 TABLES
 customer

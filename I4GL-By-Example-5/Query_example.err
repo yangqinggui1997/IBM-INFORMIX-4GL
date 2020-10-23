@@ -116,6 +116,10 @@ IF _answer MATCHES "[NnYy]" THEN
 END IF
 IF _answer MATCHES "[EeQq]" THEN
 	EXIT PROGRAM
+|___________________^
+| 
+|      第 "119" 列 21 字元發現一個文法上的錯誤. 其內容結構無法了解.
+| 參考錯誤編號 -4373.
 END IF
  END WHILE
  RETURN ans_yes

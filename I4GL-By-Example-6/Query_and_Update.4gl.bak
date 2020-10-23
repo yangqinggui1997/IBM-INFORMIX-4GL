@@ -1,4 +1,4 @@
-DATABASE test4gl
+DATABASE stores7
 GLOBALS
  DEFINE gr_customer RECORD LIKE customer.*,
  gr_workcust RECORD LIKE customer.*
@@ -46,13 +46,13 @@ FUNCTION query_cust2()
  HELP 30
  AFTER CONSTRUCT
  IF (NOT int_flag) THEN
- 	IF (NOT FIELD_TOUCHED(customer.*)) THEN
- 		LET ga_dsplymsg[1] = "You did not enter any search criteria."
- 		IF NOT prompt_window("Do you really want to see all rows?", 9, 15)
- 		THEN
- 			CONTINUE CONSTRUCT
- 		END IF
- 	END IF
+ IF (NOT FIELD_TOUCHED(customer.*)) THEN
+ LET ga_dsplymsg[1] = "You did not enter any search criteria."
+ IF NOT prompt_window("Do you really want to see all rows?", 9, 15)
+ THEN
+ CONTINUE CONSTRUCT
+ END IF
+ END IF
  END IF
  END CONSTRUCT
  IF int_flag THEN
