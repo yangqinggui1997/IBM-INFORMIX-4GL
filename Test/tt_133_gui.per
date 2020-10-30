@@ -1,0 +1,32 @@
+DATABASE test4gl
+SCREEN
+{
+
+			CUSTOMER INFORMATIONS
+ customer_num: [f01]
+ fname: [f02            ]
+ lname: [f03            ]
+ company: [f04                 ]
+ address: [f05                 ]
+ 				  [f06                 ]
+ city: [f07            ]
+ state: [f8]
+ zipcode: [f09  ]
+ phone: [f10            ]
+ 
+}
+TABLES
+customer
+ATTRIBUTES
+------
+f01  =  customer.customer_num;
+f02  =  customer.fname;
+f03  =  customer.lname;
+f04  =  customer.company;
+f05  =  customer.address1;
+f06  =  customer.address2    ,NOENTRY;
+f07  =  customer.city;
+f8  =  customer.state;
+f09  =  customer.zipcode;
+f10  =  customer.phone;
+------

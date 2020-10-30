@@ -15,6 +15,7 @@ MAIN
  dbstat USING "-<<<<<<<<<<<"
  CALL message_window(5,6)
 END MAIN
+
 FUNCTION message_window(x,y)
 #######################################
  DEFINE numrows SMALLINT,
@@ -35,6 +36,7 @@ FUNCTION message_window(x,y)
  LET numrows = numrows + 1
  END IF
  END FOR
+ 
 OPEN WINDOW w_msg AT x, y
  WITH numrows ROWS, 52 COLUMNS
  ATTRIBUTE (BORDER, PROMPT LINE LAST)

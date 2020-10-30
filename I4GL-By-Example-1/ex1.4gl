@@ -7,7 +7,7 @@ FUNCTION dsply_logo(sleep_secs)
 #######################################
 DEFINE sleep_secs SMALLINT,
  thedate DATE
-  OPEN FORM app_logo FROM "test"
+  OPEN FORM app_logo FROM "ex1"
  DISPLAY FORM app_logo
 DISPLAY " INFORMIX-4GL By Example Application" AT 2,15
  ATTRIBUTE (REVERSE, GREEN)
