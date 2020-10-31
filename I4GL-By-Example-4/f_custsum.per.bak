@@ -1,13 +1,10 @@
-
 DATABASE test4gl
 SCREEN
 {
  CUSTOMER:
- Customer Number:[f000 ] 
- Company Name: [f001                  ]
+ Customer Number:[f000 ] Company Name:[f001                  ]
  ORDERS:
- Number of unpaid orders:[f002 ] 
- Total amount due:[f003 ]
+ Number of unpaid orders:[f002 ] Total amount due:[f003 ]
  CALLS:
  Number of open calls:[f004 ]
 }

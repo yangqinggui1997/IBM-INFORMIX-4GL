@@ -1,7 +1,7 @@
 DATABASE test4gl
 SCREEN
 {
- Customer Number:[f001 ] Company Name:[f002 		]
+ Customer Number:[f001 ] Company Name:[f002 							]
 }
 TABLES
 customer
