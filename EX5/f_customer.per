@@ -1,0 +1,26 @@
+DATABASE test4gl
+SCREEN
+{
+    Customer Number: [f000 ] 
+    Company Name: [f001                  ]
+    Address 1: [f002                  ]
+    Address 2: [f003                  ]
+    City: [f004              ] State:[f5]
+    Zip Code:[f006 ]
+    First Name: [f007              ]
+    Second Name: [f008              ]
+    Telephone: [f009              ]
+}
+TABLES
+customer
+ATTRIBUTES
+f000 = customer.customer_num, NOENTRY;
+f001 = customer.company;
+f002 = customer.address1;
+f003 = customer.address2;
+f004 = customer.city;
+f5 = customer.state, UPSHIFT;
+f006 = customer.zipcode;
+f007 = customer.fname;
+f008 = customer.lname;
+f009 = customer.phone, PICTURE = "###-###-#### XXXXX";
