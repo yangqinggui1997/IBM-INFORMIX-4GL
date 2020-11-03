@@ -3,9 +3,9 @@ GLOBALS
     DEFINE _grCustSum RECORD
             customer_num LIKE customer.customer_num,
             company LIKE customer.company,
-            _unpaidOrds SMALLINT,
-            _amountDue MONEY(11),
-            _openCalls SMALLINT
+            unpaid_ords SMALLINT,
+            amount_due MONEY(11),
+            open_calls SMALLINT
     END RECORD
     DEFINE _gaDsplymsg ARRAY[5] OF CHAR(100)
 END GLOBALS
@@ -75,11 +75,11 @@ FUNCTION getSummary()
     WHERE customer_num = _grCustSum.customer_num
 --* Calculate number of unpaid orders for customer
     SELECT COUNT(*)
-    INTO _grCustSum._unpaidOrds
+    INTO _grCustSum.unpaid_ords
     FROM orders
     WHERE customer_num = _grCustSum.customer_num AND paid_date IS NULL
 --* If customer has unpaid orders, calculate total amount due
-    IF (_grCustSum._unpaidOrds > 0) 
+    IF (_grCustSum.unpaid_ords > 0) 
     THEN
         SELECT SUM(total_price)
         INTO _itemTotal
@@ -97,14 +97,14 @@ FUNCTION getSummary()
         LET _taxRate = 0.00
         CALL taxRates(_custState) RETURNING _taxRate
         LET _salesTax = _itemTotal * (_taxRate / 100)
-        LET _grCustSum._amountDue = _itemTotal + _salesTax + _shipTotal
+        LET _grCustSum.amount_due = _itemTotal + _salesTax + _shipTotal
 --* If customer has no unpaid orders, total amount due = $0.00
     ELSE
-        LET _grCustSum._amountDue = 0.00
+        LET _grCustSum.amount_due = 0.00
     END IF
  --* Calculate number of open calls for this customer
     SELECT COUNT(*)
-    INTO _grCustSum._openCalls
+    INTO _grCustSum.open_calls
     FROM cust_calls
     WHERE customer_num = _grCustSum.customer_num
         AND res_dtime IS NULL
@@ -112,7 +112,7 @@ END FUNCTION -- getSummary --
 
 FUNCTION dsplySummary()
     DEFINE _getMore SMALLINT
-    OPEN FORM _fCustSum FROM "_f_custsum"
+    OPEN FORM _fCustSum FROM "f_custsum"
 
     DISPLAY FORM _fCustSum
     DISPLAY " " AT 2, 20

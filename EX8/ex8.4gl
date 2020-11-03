@@ -3,8 +3,8 @@ GLOBALS
     DEFINE _grStock RECORD
             stock_num LIKE stock.stock_num,
             description LIKE stock.description,
-            _manuCode LIKE manufact._manuCode,
-            _manuName LIKE manufact._manuName,
+            manu_code LIKE manufact.manu_code,
+            manu_name LIKE manufact.manu_name,
             unit LIKE stock.unit,
             unit_price LIKE stock.unit_price
     END RECORD
@@ -16,11 +16,11 @@ MAIN
         MESSAGE LINE LAST
     DEFER INTERRUPT
     
-    OPEN WINDOW w_stock AT 5, 3 WITH FORM "f_stock" ATTRIBUTE (BORDER)
+    OPEN WINDOW w_stock AT 5, 3 WITH FORM "../EX7/f_stock" ATTRIBUTE (BORDER)
     DISPLAY "ADD STOCK ITEM" AT 2, 25
     IF inputStock2() 
     THEN
-        CALL insert_stock()
+        CALL insertStock()
  CLEAR FORM
  END IF
  CLOSE WINDOW w_stock
@@ -29,8 +29,8 @@ END MAIN
 
 FUNCTION insertStock()
     WHENEVER ERROR CONTINUE
-    INSERT INTO stock (stock_num, description, _manuCode, unit, unit_price)
-    VALUES (_grStock.stock_num, _grStock.description, _grStock._manuCode,_grStock.unit, _grStock.unit_price)
+    INSERT INTO stock (stock_num, description, manu_code, unit, unit_price)
+    VALUES (_grStock.stock_num, _grStock.description, _grStock.manu_code,_grStock.unit, _grStock.unit_price)
     WHENEVER ERROR STOP
 
     IF status < 0
@@ -44,7 +44,7 @@ END FUNCTION -- insertStock --
 FUNCTION inputStock2()
     DISPLAY " Press Accept to save stock data, Cancel to exit w/out saving." AT 1, 1 ATTRIBUTE (REVERSE, YELLOW)
     INPUT BY NAME _grStock.stock_num, _grStock.description,
-                _grStock._manuCode, _grStock.unit,
+                _grStock.manu_code, _grStock.unit,
                 _grStock.unit_price
     AFTER FIELD stock_num
         IF _grStock.stock_num IS NULL 
@@ -52,34 +52,34 @@ FUNCTION inputStock2()
             ERROR "You must enter a stock number. Please try again."
             NEXT FIELD stock_num
         END IF
-    BEFORE FIELD _manuCode
+    BEFORE FIELD manu_code
         MESSAGE "Enter a manufacturer code or press F5 (CTRL-F) for a list."
-    AFTER FIELD _manuCode
-        IF _grStock._manuCode IS NULL 
+    AFTER FIELD manu_code
+        IF _grStock.manu_code IS NULL 
         THEN
             ERROR "You must enter a manufacturer code. Please try again."
-            NEXT FIELD _manuCode
+            NEXT FIELD manu_code
         END IF
-        IF _grStock._manuName IS NULL 
+        IF _grStock.manu_name IS NULL 
         THEN
-            SELECT _manuName
-            INTO _grStock._manuName
+            SELECT manu_name
+            INTO _grStock.manu_name
             FROM manufact
-            WHERE _manuCode = _grStock._manuCode
+            WHERE manu_code = _grStock.manu_code
             IF (status = NOTFOUND) THEN
                 ERROR "Unknown manufacturer's code. Use F5 (CTRL-F) to see valid codes."
-                LET _grStock._manuCode = NULL
-                NEXT FIELD _manuCode
+                LET _grStock.manu_code = NULL
+                NEXT FIELD manu_code
             END IF
             
-            DISPLAY BY NAME _grStock._manuName
+            DISPLAY BY NAME _grStock.manu_name
             IF uniqueStock() 
             THEN
-                DISPLAY BY NAME _grStock._manuCode, _grStock._manuName
+                DISPLAY BY NAME _grStock.manu_code, _grStock.manu_name
                 NEXT FIELD unit
             ELSE
-                DISPLAY BY NAME _grStock.description, _grStock._manuCode,
-                                _grStock._manuName
+                DISPLAY BY NAME _grStock.description, _grStock.manu_code,
+                                _grStock.manu_name
                 NEXT FIELD stock_num
             END IF
         END IF
@@ -104,24 +104,24 @@ FUNCTION inputStock2()
             NEXT FIELD unit_price
         END IF
     ON KEY (F5, CONTROL-F)
-        IF INFIELD(_manuCode) 
+        IF INFIELD(manu_code) 
         THEN
-            CALL manufPopup() RETURNING _grStock._manuCode, _grStock._manuName
-            IF _grStock._manuCode IS NULL 
+            CALL manufPopup() RETURNING _grStock.manu_code, _grStock.manu_name
+            IF _grStock.manu_code IS NULL 
             THEN
-                NEXT FIELD _manuCode
+                NEXT FIELD manu_code
             ELSE
-                DISPLAY BY NAME _grStock._manuCode
+                DISPLAY BY NAME _grStock.manu_code
             END IF
 
             MESSAGE ""
             IF uniqueStock() 
             THEN
-                DISPLAY BY NAME _grStock._manuName
+                DISPLAY BY NAME _grStock.manu_name
                 NEXT FIELD unit
             ELSE
-                DISPLAY BY NAME _grStock.description, _grStock._manuCode,
-                                _grStock._manuName
+                DISPLAY BY NAME _grStock.description, _grStock.manu_code,
+                                _grStock.manu_name
                 NEXT FIELD stock_num
             END IF
         END IF
@@ -137,8 +137,8 @@ END FUNCTION -- inputStock2 --
 
 FUNCTION manufPopup()
     DEFINE _paManuf ARRAY[200] OF RECORD
-            _manuCode LIKE manufact._manuCode,
-            _manuName LIKE manufact._manuName
+            manu_code LIKE manufact.manu_code,
+            manu_name LIKE manufact.manu_name
             END RECORD,
             _idx SMALLINT,
             _manufCnt SMALLINT,
@@ -154,9 +154,9 @@ FUNCTION manufPopup()
     DISPLAY "Press Accept to select a manufacturer." AT 2,2
 
     DECLARE _cManufPop CURSOR FOR
-    SELECT _manuCode, _manuName
+    SELECT manu_code, manu_name
     FROM manufact
-    ORDER BY _manuCode
+    ORDER BY manu_code
 
     LET _overSize = FALSE
     LET _manufCnt = 1
@@ -173,7 +173,7 @@ FUNCTION manufPopup()
     THEN
         CALL msg("No manufacturers exist in the database.")
         LET _idx = 1
-        LET _paManuf[_idx]._manuCode = NULL
+        LET _paManuf[_idx].manu_code = NULL
     ELSE
         IF _overSize 
         THEN
@@ -187,11 +187,11 @@ FUNCTION manufPopup()
         THEN
             LET int_flag = FALSE
             CALL msg("No manufacturer code selected.")
-            LET _paManuf[_idx]._manuCode = NULL
+            LET _paManuf[_idx].manu_code = NULL
         END IF
     END IF
     CLOSE WINDOW _wManufPop
-    RETURN _paManuf[_idx]._manuCode, _paManuf[_idx]._manuName
+    RETURN _paManuf[_idx].manu_code, _paManuf[_idx].manu_name
 END FUNCTION -- manufPopup --
 
 FUNCTION uniqueStock()
@@ -200,15 +200,15 @@ FUNCTION uniqueStock()
     SELECT COUNT(*)
     INTO _stkCnt
     FROM stock
-    WHERE stock_num = _grStock.stock_num AND _manuCode = _grStock._manuCode
+    WHERE stock_num = _grStock.stock_num AND manu_code = _grStock.manu_code
  
     IF (_stkCnt > 0) 
     THEN
-        ERROR "A stock item with stock number ", _grStock.stock_num, " and manufacturer code ", _grStock._manuCode, " exists."
+        ERROR "A stock item with stock number ", _grStock.stock_num, " and manufacturer code ", _grStock.manu_code, " exists."
         LET _grStock.stock_num = NULL
         LET _grStock.description = NULL
-        LET _grStock._manuCode = NULL
-        LET _grStock._manuName = NULL
+        LET _grStock.manu_code = NULL
+        LET _grStock.manu_name = NULL
         RETURN (FALSE)
     END IF
     RETURN (TRUE)

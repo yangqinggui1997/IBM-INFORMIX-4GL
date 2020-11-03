@@ -209,7 +209,7 @@ FUNCTION messageWindow(x,y)
     PROMPT " Press RETURN to continue." FOR _answer
     
     CLOSE WINDOW _wMsg
-    CALL _initMsgs()
+    CALL initMsgs()
 END FUNCTION -- messageWindow --
 
 FUNCTION updateCust()
@@ -317,7 +317,7 @@ FUNCTION promptWindow(_question, x,y)
  -- * 1 (for the empty line after
  -- * the last line of message)
     FOR i = 1 TO _arraySz
-        IF _gaDsplymsg[i] IS NOT NULL
+        IF _message[i] IS NOT NULL
         THEN
             LET _numRows = _numRows + 1
         END IF
@@ -351,9 +351,9 @@ FUNCTION promptWindow(_question, x,y)
 
     LET _rowNum = 3 -- * start text display at third line
     FOR i = 1 TO _arraySz
-        IF _gaDsplymsg[i] IS NOT NULL
+        IF _message[i] IS NOT NULL
         THEN
-            DISPLAY _gaDsplymsg[i] CLIPPED AT _rowNum, 2
+            DISPLAY _message[i] CLIPPED AT _rowNum, 2
             LET _rowNum = _rowNum + 1
         END IF
     END FOR

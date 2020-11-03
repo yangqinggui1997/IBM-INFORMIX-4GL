@@ -1,8 +1,8 @@
 MAIN
-    CALL display_form(3)
-END
+    CALL displayForm(3)
+END MAIN
 
-FUNCTION display_form(_sleepSeconds)
+FUNCTION displayForm(_sleepSeconds)
     DEFINE 	_sleepSeconds	SMALLINT,
             _theDate        DATE
     OPEN FORM _frm FROM "ex1"

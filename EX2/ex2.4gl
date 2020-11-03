@@ -3,7 +3,7 @@ GLOBALS
 END GLOBALS
 
 MAIN
-    DEFINE  _i          SMALLINT
+    DEFINE  _i          SMALLINT,
             _errCode    INTEGER
     LET _errCode = -3720
     INITIALIZE _arrayMessage TO NULL
@@ -19,14 +19,14 @@ FUNCTION showMessage(_x, _y, _countMessage)
             _prompt         CHAR(1),
             _countMessage   SMALLINT
     LET _countRows = 4
-    FOR _i = 1 TO _countRows
+    FOR _i = 1 TO _countMessage
         IF _arrayMessage[_i] IS NOT NULL
         THEN
             LET _countRows = _countRows + 1
         END IF
     END FOR
 
-    OPEN WINDOW _window AT _x,_y WITH _countRows ROWS, 52 COLUMNS ATTRIBUTE (BORDER. PROMPT LINE LAST)
+    OPEN WINDOW _window AT _x,_y WITH _countRows ROWS, 52 COLUMNS ATTRIBUTE (BORDER, PROMPT LINE LAST)
     DISPLAY "APPLICATION MASSAGE" AT 1, 17 ATTRIBUTE (REVERSE,BLUE)
     LET _countRows = 3
     FOR _i = 1 TO _countMessage

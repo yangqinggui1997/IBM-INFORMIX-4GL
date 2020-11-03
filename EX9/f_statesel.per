@@ -1,0 +1,20 @@
+DATABASE test4gl
+SCREEN
+{
+	Code				State
+	[f001  ]		[f002            ]
+	[f001  ]		[f002            ]
+	[f001  ]		[f002            ]
+	[f001  ]		[f002            ]
+	[f001  ]		[f002            ]
+	[f001  ]		[f002            ]
+	[f001  ]		[f002            ]
+	[f001  ]		[f002            ]
+}
+TABLES
+state
+ATTRIBUTES
+f001 = state.code;
+f002 = state.sname;
+INSTRUCTIONS
+SCREEN RECORD _saState[8] (state.code THRU state.sname)
