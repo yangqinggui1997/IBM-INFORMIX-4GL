@@ -1,0 +1,22 @@
+DATABASE test4gl
+SCREEN
+{
+ Stock No. Description    Manufacturer Code/Name    Unit    Unit Price
+ [f001  ]  [f002        ] [f003][f004            ]  [f005]  [f006      ]
+ [f001  ]  [f002        ] [f003][f004            ]  [f005]  [f006      ]
+ [f001  ]  [f002        ] [f003][f004            ]  [f005]  [f006      ]
+ [f001  ]  [f002        ] [f003][f004            ]  [f005]  [f006      ]
+ [f001  ]  [f002        ] [f003][f004            ]  [f005]  [f006      ]
+}
+TABLES
+stock
+manufact
+ATTRIBUTES
+f001 = stock.stock_num;
+f002 = stock.description;
+f003 = stock.manu_code;
+f004 = manufact.manu_name;
+f005 = stock.unit;
+f006 = stock.unit_price;
+INSTRUCTIONS
+SCREEN RECORD sa_stock[5] (stock.stock_num THRU stock.unit_price)

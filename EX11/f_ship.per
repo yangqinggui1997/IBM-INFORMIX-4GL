@@ -1,0 +1,29 @@
+DATABASE test4gl
+SCREEN
+{
+ Customer Number:[f000 ] Company Name:[f001             ]
+ Order No:[f002 ] Order Date:[f003              ]
+ Ship Date: [f004           ]
+ Shipping Instructions:[f005                            ]
+ Shipping Weight (in lbs.): [f006           ]
+ Order Amount (incl. Tax) : [f007       ]
+ Shipping Charge ($1.50/lb): [f008          ]
+ --------------------------------------------
+ Order Total: [f009             ]
+}
+TABLES
+customer orders
+ATTRIBUTES
+f000 = orders.customer_num;
+f001 = customer.company;
+f002 = formonly.order_num;
+f003 = orders.order_date;
+f004 = orders.ship_date, DEFAULT = TODAY;
+f005 = orders.ship_instruct;
+f006 = orders.ship_weight, DEFAULT = 0.00;
+f007 = formonly.order_amount, NOENTRY;
+f008 = orders.ship_charge;
+f009 = formonly.order_total, NOENTRY;
+INSTRUCTIONS
+SCREEN RECORD sr_ship(orders.ship_date, orders.ship_instruct,
+ orders.ship_weight, orders.ship_charge)

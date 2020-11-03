@@ -1,0 +1,18 @@
+DATABASE test4gl
+SCREEN
+{
+ Customer No. Company Name
+ [f001      ] [f002             ]
+ [f001      ] [f002             ]
+ [f001      ] [f002             ]
+ [f001      ] [f002             ]
+ [f001      ] [f002             ]
+}
+TABLES
+customer
+ATTRIBUTES
+f001 = customer.customer_num, ZEROFILL;
+f002 = customer.company;
+
+INSTRUCTIONS
+SCREEN RECORD sa_cust[5] (customer.customer_num THRU customer.company)

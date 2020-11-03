@@ -1,0 +1,41 @@
+DATABASE test4gl
+SCREEN
+{
+Customer Number:[f000 ] Company Name:[f001               ]
+Order No:[f002 ] Order Date:[f003                ] PO Number:[f004      ]
+----------------------------------------------------------------------------
+Item No. Stock No Manuf Description       Quantity  Price     Total
+[f005  ] [f006  ] [f07] [f008           ] [f009 ]   [f010   ] [f011       ]
+[f005  ] [f006  ] [f07] [f008           ] [f009 ]   [f010   ] [f011       ]
+[f005  ] [f006  ] [f07] [f008           ] [f009 ]   [f010   ] [f011       ]
+[f005  ] [f006  ] [f07] [f008           ] [f009 ]   [f010   ] [f011       ]
+ ---------------
+ Sub-Total: [f012       ]
+ Tax Rate [f013 ]% [f014 ] Sales Tax: [f015     ]
+----------------------------------------------------------------------------
+ Order Total: [f016         ]
+}
+TABLES
+customer orders items stock state
+ATTRIBUTES
+f000 = orders.customer_num;
+f001 = customer.company;
+f002 = orders.order_num;
+f003 = orders.order_date, DEFAULT = TODAY;
+f004 = orders.po_num;
+f005 = items.item_num, NOENTRY;
+f006 = items.stock_num;
+f07 = items.manu_code, UPSHIFT;
+f008 = stock.description, NOENTRY;
+f009 = items.quantity;
+f010 = stock.unit_price, NOENTRY;
+f011 = items.total_price, NOENTRY;
+f012 = formonly.order_amount;
+f013 = formonly.tax_rate;
+f014 = state.code, NOENTRY;
+f015 = formonly.sales_tax TYPE MONEY;
+f016 = formonly.order_total;
+
+INSTRUCTIONS
+SCREEN RECORD sa_items[4](items.item_num, items.stock_num, items.manu_code,
+ stock.description, items.quantity, stock.unit_price, items.total_price)
