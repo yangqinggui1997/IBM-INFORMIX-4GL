@@ -93,3 +93,182 @@ FUNCTION addOrder(parametros)
         END IF
     END IF
 END FUNCTION
+
+FUNCTION inputCust()
+	DISPLAY " Enter the Customer number and press Return. Press CTRL-W for Help." AT 16, 1 ATTRIBUTE (REVERSE, YELLOW)
+	
+	LET INT_FLAG = FALSE
+	INPUT BY NAME _grCustomer.customer_num
+	BEFORE FIELD customer_num
+		MESSAGE "Enter a customer number or press F5 (CTRL-F) for a list."
+	AFTER FIELD customer_num
+		IF _grCustomer.customer_num IS NULL
+		THEN 
+			ERROR "You must enter a customer number. Please try again."
+			NEXT FIELD customer_num
+		END IF
+		DISPLAY BY NAME _grCustomer.company
+		MESSAGE ""
+		EXIT INPUT
+	ON KEY (CONTROL-F, F5)
+		IF INFIELD(customer_num)
+		THEN
+			CALL custPopup() RETURNING _grCustomer.customer_num, _grCustomer.company
+			IF _grCustomer.customer_num IS NULL
+			THEN
+				NEXT FIELD customer_num
+			ELSE
+				SELECT state 
+				INTO _grCustomer.state
+				FROM customer
+				WHERE customer_num = _grCustomer.customer_num
+				DISPLAY BY NAME _grCustomer.customer_num, _grCustomer.company
+			END IF
+		END IF
+	END INPUT
+	
+	IF INT_FLAG
+	THEN
+		LET INT_FLAG = FALSE
+		CALL clearLines(2, 16)
+		CLEAR FORM
+		CALL msg("Order input terminated.")
+		RETURN (FALSE)
+	END IF
+	RETURN (TRUE)
+END FUNCTION
+
+FUNCTION custPopup()
+	DEFINE _paCust ARRAY[200] OF RECORD
+					customer_num LIKE customer.customer_num,
+					company LIKE customer.company
+					END RECORD,
+	_idx INTEGER,
+	_arraySz SMALLINT,
+	_custCnt SMALLINT,
+	_overSize SMALLINT
+	
+	LET _arraySz = 200
+	OPEN WINDOW _wCustPop AT 7, 5 WITH 12 ROWS, 44 COLUMNS ATTRIBUTE(BORDER, FORM LINE 4)
+	OPEN FORM _frmCustSel FROM "f_custsel"
+	DISPLAY FORM _frmCustSel
+	DISPLAY "Move cursor using F3, F4, and arrow keys." AT 1, 2
+	DISPLAY "Press Accept to select 1 company." AT 2, 2
+	
+	DECLARE _cCustpop CURSOR FOR 
+	SELECT customer_num, company
+	FROM customer
+	ORDER BY customer_num
+	
+	LET  _overSize = FALSE
+	LET _custCnt = 1
+	FOREACH _cCustpop INTO _paCust[_custCnt].*
+		LET _custCnt = _custCnt + 1
+		IF _custCnt > _arraySz 
+		THEN
+			LET _overSize = TRUE
+			EXIT FOREACH
+		END IF
+	END FOREACH
+	IF _custCnt = 1 
+	THEN
+		CALL msg("No customer exists in the database.")
+		LET _idx = 1
+		LET _paCust[_idx].customer_num = NULL
+	ELSE
+		IF _overSize 
+		THEN
+			MESSAGE "Customer array full: can only display ", _arraySz USING "<<<<<<"
+		END IF
+		
+		CALL SET_COUNT(_custCnt - 1)
+		LET INT_FLAG = FALSE
+		DISPLAY ARRAY _paCust TO _saCust.*
+		
+		LET _idx = ARR_CURR()
+		IF INT_FLAG 
+		THEN
+			LET INT_FLAG =  FALSE
+			CLEAR FORM
+			CALL msg("No customer selected.")
+			LET _paCust[_idx].customer_num = NULL
+		END IF
+	END IF
+	CLOSE WINDOW _wCustPop
+	RETURN _paCust[_idx].customer_num, _paCust[_idx].company
+END FUNCTION
+
+FUNCTION inputCust()
+	CALL clearLines(1, 16)
+	DISPLAY " Enter the order information and press RETURN. Press CTRL-W for help." AT 16, 1 ATTRIBUTE(REVERSE, YELLOW)
+	
+	LET INT_FLAG = FALSE
+	INPUT BY NAME _grOrders.order_date , _grOrders.po_num
+		BEFORE  FIELD order_date
+			IF _grOrders.order_date IS NULL
+			THEN 
+				LET _grOrders.order_date = TODAY
+			END IF
+		AFTER FIELD order_date
+			IF _grOrders.order_date IS NULL
+			THEN
+				LET _grOrders.order_date = TODAY
+			END IF
+	END INPUT
+	
+	IF INT_FLAG
+	THEN
+		LET INT_FLAG = FALSE
+		CALL clearLines(2, 16)
+		CLEAR FORM
+		CALL msg("Order input terminated.")
+		RETURN (FALSE)
+	END IF
+	
+	RETURN (TRUE)
+END FUNCTION
+
+FUNCTION intputItems()
+	DEFINE _currPa INTEGER,
+					_currSa INTEGER,
+					_stockCnt INTEGER,
+					stock_item LIKE stock.stock_item,
+					_popup SMALLINT,
+					_keyval INTEGER,
+					_validKey SMALLINT
+					
+					
+	CALL clearLines(1, 16)
+	DISPLAY " Enter the item information and press Accept. Press CTRL-W for help." AT 16, 1 ATTRIBUTE(REVERSE, YELLOW)
+	LET INT_FLAG = FALSE
+	
+	INPUT ARRAY _gaItems FROM _saItems.*
+		BEFORE ROWID
+			LET _currPa = ARR_COUNT()
+			LET _currSa = SCR_LINE()
+		BEFORE INSERT
+			CALL renumItems()
+		BEFORE FIELD stock_num
+			MESSAGE "Enter a stock number or [ress F5 (CTRL-F) for a list."
+			LET _popup = FALSE
+		AFTER FIELD stock_num
+			IF _gaItems[_currPa].stock_num IS NULL
+			THEN
+				LET _keyval = FGL_LASTKEY()
+				IF _keyval = FGL_KEYVAL("accept")
+				THEN 
+					IF _currPa = 1 
+					THEN
+						LET INT_FLAG = TRUE
+						EXIT INPUT
+					END IF
+				ELSE
+					LET _validKey = (_keyval = FGL_KEYVAL("up")) OR (_keyval = FGL_KEYVAL("prevpage"))
+					IF NOT _validKey
+					THEN
+						ERROR "You must enter a stock number. Please try again."
+						NEXT FIELD stock_num
+					END IF
+				END IF
+						
+END FUNCTION
