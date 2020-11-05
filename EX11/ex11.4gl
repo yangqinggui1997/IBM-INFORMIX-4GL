@@ -270,5 +270,115 @@ FUNCTION intputItems()
 						NEXT FIELD stock_num
 					END IF
 				END IF
-						
-END FUNCTION
+			ELSE --* stock number is not null, continue
+ 				IF NOT _popup 
+				THEN
+ 					LET _stockCnt = 0
+ 					SELECT COUNT(*)
+ 					INTO _stockCnt
+ 					FROM stock
+ 					WHERE stock_num = _gaItems[_currPa].stock_num
+ 					
+					IF (_stockCnt = 0) 
+					THEN
+ 						ERROR "Unknown stock number. Use F5 (CTRL-F) to see valid stock numbers."
+ 						LET _gaItems[_currPa].stock_num = NULL
+ 						NEXT FIELD stock_num
+ 					END IF
+ 				END IF
+ 			END IF
+ 			MESSAGE ""
+		BEFORE FIELD manu_code
+ 			MESSAGE "Enter the manufacturer code or press F5 (CTRL-F) for a list."
+		AFTER FIELD manu_code
+ 			IF _gaItems[_currPa].manu_code IS NULL 
+			THEN
+ 				ERROR "You must enter a manufacturer code. Use F5 (CTRL-F) to see valid codes."
+ 				LET _gaItems[_currPa].manu_code = NULL
+ 				NEXT FIELD manu_code
+			ELSE
+	 			IF NOT _popup 
+				THEN
+ 					SELECT description, unit_price
+ 					INTO _gaItems[_currPa].description, _gaItems[_currPa].unit_price
+ 					FROM stock
+ 					WHERE stock_num = _gaItems[_currPa].stock_num AND manu_code = _gaItems[_currPa].manu_code
+ 					
+					IF (status = NOTFOUND) 
+					THEN
+ 						ERROR "Unknown manuf code for this stock number. Use F5 (CTRL-F) to see valid codes."
+						LET _gaItems[_currPa].manu_code = NULL
+ 						NEXT FIELD manu_code
+ 					END IF
+					
+					DISPLAY _gaItems[_currPa].description, _gaItems[_currPa].unit_price TO _saItems[_currSa].description, _saItems[_currSa].unit_price
+ 					MESSAGE ""
+ 					NEXT FIELD quantity
+ 				END IF
+ 			END IF
+ 			MESSAGE ""	
+		BEFORE FIELD quantity
+ 			IF _gaItems[_currPa].quantity IS NULL 
+			THEN
+ 				LET _gaItems[_currPa].quantity = 1
+ 			END IF
+		AFTER FIELD quantity
+ 			IF _gaItems[_currPa].quantity IS NULL OR _gaItems[_currPa].quantity < 0
+ 			THEN
+ 				ERROR "Quantity must be greater than 0. Please try again."
+ 				NEXT FIELD quantity
+ 			END IF
+ 			
+			LET _gaItems[_currPa].total_price = _gaItems[_currPa].quantity * _gaItems[_currPa].unit_price
+ 			DISPLAY _gaItems[_currPa].total_price TO _saItems[_currSa].total_price
+			CALL orderAmount() RETURNING _grOrders.order_amount
+ 			DISPLAY BY NAME _grOrders.order_amount
+		AFTER INSERT
+ 			CALL orderAmount() RETURNING _grOrders.order_amount
+ 			DISPLAY BY NAME _grOrders.order_amount
+		AFTER DELETE
+ 			CALL renumItems()
+ 			CALL orderAmount() RETURNING _grOrders.order_amount
+ 			DISPLAY BY NAME _grOrders.order_amount
+ 		AFTER INPUT
+ 			CALL clearLines(1, 16)
+ 			MESSAGE ""
+		ON KEY (CONTROL-F, F5)
+ 			IF INFIELD(stock_num) OR INFIELD(manu_code) 
+			THEN
+				IF INFIELD(stock_num) 
+				THEN
+ 					LET stock_item = NULL
+ 				ELSE
+ 					LET stock_item = _gaItems[_currPa].stock_num
+ 				END IF
+ 				CALL stockPopup(stock_item) RETURNING _gaItems[_currPa].stock_num, _gaItems[_currPa].manu_code, _gaItems[_currPa].description, _gaItems[_currPa].unit_price
+				
+				IF _gaItems[_currPa].stock_num IS NULL 
+				THEN
+ 					NEXT FIELD stock_num
+ 				ELSE
+ 					IF _gaItems[_currPa].manu_code IS NULL 
+					THEN
+ 						NEXT FIELD manu_code
+ 					END IF
+ 				END IF
+				
+				DISPLAY _gaItems[_currPa].stock_num TO _saItems[_currSa].stock_num
+ 				DISPLAY _gaItems[_currPa].manu_code TO _saItems[_currSa].manu_code
+ 				DISPLAY _gaItems[_currPa].description TO _saItems[_currSa].description
+ 				DISPLAY _gaItems[_currPa].unit_price TO _saItems[_currSa].unit_price
+ 				NEXT FIELD quantity
+ 			END IF
+ 	END INPUT
+	
+	IF int_flag
+	THEN
+ 		LET int_flag = FALSE
+ 		CALL clearLines(2, 16)
+ 		CLEAR FORM
+ 		CALL msg("Order input terminated.")
+ 		RETURN (FALSE)
+ 	END IF
+ 	RETURN (TRUE)
+END FUNCTION -- input_items --
