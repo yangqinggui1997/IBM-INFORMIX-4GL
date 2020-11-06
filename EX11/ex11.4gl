@@ -616,6 +616,7 @@ FUNCTION orderTx()
 	COMMIT WORK
 	RETURN (TRUE)		
 END FUNCTION -- order_tx --
+
 FUNCTION insertOrder()
 	DEFINE _insStat INTEGER
 	
