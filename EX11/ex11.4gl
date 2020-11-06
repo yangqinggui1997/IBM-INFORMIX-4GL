@@ -18,10 +18,10 @@ GLOBALS
                         total_price LIKE items.total_price
                     END RECORD,
             _grCharges RECORD
-                        tax_rateDECIMAL(5,3),
-                        ship_chargeLIKE orders.ship_charge,
-                        sales_taxMONEY(9),
-                        order_totalMONEY(11)
+                        tax_rate DECIMAL(5,3),
+                        ship_charge LIKE orders.ship_charge,
+                        sales_tax MONEY(9),
+                        order_total MONEY(11)
                     END RECORD,
             _grShip RECORD
                         ship_date LIKE orders.ship_date,
@@ -304,7 +304,7 @@ FUNCTION intputItems()
  					FROM stock
  					WHERE stock_num = _gaItems[_currPa].stock_num AND manu_code = _gaItems[_currPa].manu_code
  					
-					IF (status = NOTFOUND) 
+					IF (STATUS = NOTFOUND) 
 					THEN
  						ERROR "Unknown manuf code for this stock number. Use F5 (CTRL-F) to see valid codes."
 						LET _gaItems[_currPa].manu_code = NULL
@@ -372,9 +372,9 @@ FUNCTION intputItems()
  			END IF
  	END INPUT
 	
-	IF int_flag
+	IF INT_FLAG
 	THEN
- 		LET int_flag = FALSE
+ 		LET INT_FLAG = FALSE
  		CALL clearLines(2, 16)
  		CLEAR FORM
  		CALL msg("Order input terminated.")
@@ -382,3 +382,276 @@ FUNCTION intputItems()
  	END IF
  	RETURN (TRUE)
 END FUNCTION -- input_items --
+
+FUNCTION
+	DEFINE _pCurr INTEGER,
+				_pTotal INTEGER,
+				_sCurr INTEGER,
+				_sTotal INTEGER,
+				_k INTEGER
+	
+	LET _pCurr = ARR_CURR()
+	LET _pTotal = ARR_COUNT()
+	LET _sCurr = SCR_LINE()
+	LET _sTotal = 4
+	
+	FOR _k = _pCurr TO _pTotal
+		LET _gaItems[k].item_num = _k
+		IF _sCurr <= _sTotal
+		THEN
+			DISPLAY _k TO _saItems[_sCurr].item_num
+			LET _sCurr = _sCurr + 1
+		END IF
+	END FOR
+END FUNCTION
+
+FUNCTION stockPopup(_stockItem)
+	DEFINE _paStock ARRAY[200] OF RECORD
+				stock_num LIKE stock.stock_num,
+				description LIKE stock.description,
+				manu_code LIKE stock.manu_code,
+				manu_name LIKE manufact.manu_name,
+				unit LIKE stock.unit,
+				unit_price LIKE stock.unit_price
+			END RECORD,
+		_idx INTEGER,
+		_stockCnt INTEGER,
+		_stStock CHAR(300),
+		_arraySz SMALLINT,
+		_overSize SMALLINT
+		
+		LET _arraySz = 200
+		OPEN WINDOW _wStockPop AT 7, 4 WITH 12 ROWS, 73 COLUMNS ATTRIBUTE (BORDER, FROM LINE 4)
+		OPEN FORM _frmStockSel FROM "f_stocksel"
+		DISPLAY FORM _frmStockSel 
+		
+		DISPLAY "Move cursor using F3, F4, and arrow keys." AT 1, 200
+		DISPLAY "Press Accept to select a stock item." AT 2,2
+		
+		LET _stStock = "SELECT stock_num, description, stock.manu_code, manufact.manu_name, unit, unit_price FROM stock, manufact"
+		
+		IF _stockItem IS NOT NULL
+		THEN
+			LET _stStock = _stStock CLIPPED, " WHERE stock_num = ", stock_item, " AND stock.manu_code = manufact.manu_code ORDER BY 1, 3"
+		ELSE
+			LET _stStock = _stStock CLIPPED, " WHERE stock.manu_code = manufact.manu_code ORDER BY 1, 3"
+		END IF
+		
+		PREPARE _preapareCursor FROM _stStock
+		DECLARE _cursorStock SCROLL CURSOR FOR _preapareCursor
+		
+		LET _overSize  = FALSE
+		LET _stockCnt = 1
+		
+		FOREACH _cursorStock INTO _paStock[_stockCnt].*
+			LET _stockCnt = _stockCnt + 1
+			IF _stockCnt > _arraySz
+			THEN
+				LET _overSize = TRUE
+				EXIT FOREACH
+			END IF
+		END FOREACH
+		
+		IF _stockCnt = 1
+		THEN
+			CALL msg("No stock data in the database.")
+			LET _idx = 10LET _paStock[_idx].stock_num = NULL
+		ELSE
+			IF _overSize
+			THEN
+				MESSAGE "Stock array full: can only display.", _arraySz USING "<<<<<<"
+			END IF
+			CALL SET_COUNT(_stockCnt -1)
+			LET INT_FLAG = FALSE
+			DISPLAY ARRAY _paStock TO _saStock.*
+			LET _idx =ARR_CURR()
+			
+			IF INT_FLAG
+			THEN 
+				LET INT_FLAG = FALSE
+				CLEAR FORM
+				CALL msg("No stock item selected.")
+				LET _paStock[_idx].manu_code = NULL
+				IF _stockItem IS NULL
+				THEN
+					LET _stockItem[_idx].stock_num = NULL
+				END IF
+			END IF
+		END IF
+		CLOSE WINDOW _wStockPop
+		RETURN _paStock[_idx].stock_num, _paStock[_idx].manu_code, _paStock[_idx].description, _paStock[_idx].unit_price
+END FUNCTION  -- stock_popup --
+
+FUNCTION dsplyTaxes()
+	LET _grCharges.tax_rate = taxRates(_grCustomer.state)
+	DISPLAY _grCustomer.state TO code
+	DISPLAY BY NAME _grCharges.tax_rate
+	LET _grCharges.sales_tax = _grOrders.order_amount * (_grCharges.tax_rate / 100)
+	DISPLAY BY NAME _grCharges.sales_tax
+	
+	LET _grCharges.order_total = _grOrders.orderAmount + _grCharges.sales_tax
+	
+	DISPLAY BY NAME _grCharges.order_total
+END FUNCTION -- dsply_taxes --
+
+FUNCTION orderAmount()
+	DEFINE _ordAmount MONEY(8),
+					_idx INTEGER
+		
+	FOR _idx = 1 TO ARR_COUNT()
+		IF _gaItems[_idx].total_price IS NOT NULL
+		THEN
+			LET _ordAmount = _ordAmount + _gaItems[_idx].total_price
+		END IF
+	END FOREACH
+	
+	RETURN (_ordAmount)
+END FUNCTION
+
+FUNCTION shipOrder()
+	CALL clearLines(1,1)
+	OPEN WIN _wShip AT 7, 6 WITH FORM "f_ship" ATTRIBUTE (BORDER, COMMENT LINE 3, PROMPT LINE 4)
+	DISPLAY "Press Accept to save shiping information." AT 1, 1 ATTRIBUTE (REVERSE, YELLOW)
+	DISPLAY " Press Cancle to exit w/out saving. Press CTRL-W for Help." AT 2,1 ATTRIBUTE (REVERSE, YELLOW)
+	
+	DISPLAY BY NAME _grOrders.order_num, _grOrders.order_date, _grCustomer.customer_num, _grCustomer.company
+	
+	INITIALIZE _grShip.* TO NULL
+	IF inputShip()
+	THEN
+		CALL msg("Shipping information entered.")
+	END IF
+	CLOSE WINDOW _wShip
+END FUNCTION -- ship_order --
+
+FUNCTION inputShip()
+	DISPLAY _grCharges.order_total TO order_amount
+	IF _grCharges.ship_charge IS NULL 
+	THEN 
+		LET _grCharges.ship_charge = 0.00
+	END IF
+	
+	LET _grShip.ship_charge = _grCharges.ship_charge
+	LET _grCharges.order_total = _grCharges.order_total + _grCharges.ship_charge;
+	
+	DISPLAY BY NAME _grShip.ship_date, _grShip.ship_instruct, _grShip.ship_weight, _grShip.ship_charge WITHOUT DEFAULTS
+		BEFORE FIELD ship_date
+			IF _grShip.ship_date IS NULL
+			THEN
+				LET _grShip.ship_date = TODAY
+			END IF
+		AFTER FIELD ship_date
+			IF _grShip.ship_date IS NULL
+			THEN
+				LET _grShip.ship_date = TODAY
+				DISPLAY BY NAME _grShip.ship_date
+			END IF
+		BEFORE FIELD ship_weight
+			IF _grShip.ship_weight IS NULL
+			THEN
+				LET _grShip.ship_weight = 0.00
+			END IF
+		AFTER FIELD ship_weight
+			IF _grShip.ship_weight IS NULL
+			THEN
+				LET _grShip.ship_weight = 0.00
+				DISPLAY BY NAME _gr.ship_weight
+			END IF
+			
+			IF _grShip.ship_weight < 0.00 
+			THEN
+				ERROR "Shipping Weight cannot be less than 0.00 lbs. Please try again."
+				LET _grShip.ship_weight = 0.00
+				NEXT FIELD ship_weight
+			END IF
+		BEFORE FIELD ship_charge
+			IF _grShip.ship_charge = 0.00 
+			THEN
+				LET _grShip.ship_charge = 1.5 * _grShip.ship_weight
+			END IF
+		AFTER FIELD ship_charge
+			IF _grShip.ship_charge IS NULL
+			THEN
+				LET _grShip.ship_charge = 0.00
+				DISPLAY BY NAME _grShip.ship_charge
+			END IF
+			IF _grShip.ship_charge < 0.00
+			THEN
+				ERROR "Shipping Charge cannot be less than $0.00. Please try again."
+				NEXT FIELD ship_charge
+			END IF
+			LET _grCharges.order_total = _grCharges.order_total + _grShip.ship_charge
+			DISPLAY BY NAME _grCharges.order_total
+	END INPUT
+	
+	IF INT_FLAG 
+	THEN 
+		LET INT_FLAG = FALSE
+		CALL msg("Shipping input terminated.")
+		RETURN (FALSE)
+	END IF 
+	
+	RETURN (TRUE)
+END FUNCTION
+
+FUNCTION orderTx()
+	DEFINE _txStat INTEGER,
+				_txTable CHAR(5)
+	
+	BEGIN WORK
+		LET _txTable = "order"
+		LET _txStat = insertOrder()
+		IF (_txStat = 0)
+		THEN
+			LET _txTable = "items"
+			LET _txStat = insertItems()
+		END IF
+		
+		IF (_txStat < 0)
+		THEN
+			ROLLBACK WORK
+			ERROR _txStat USING "-<<<<<<<<<<<", ": Unable to save order: ", _txTable, " insert failed."
+			RETURN (FALSE)
+		END IF	
+	COMMIT WORK
+	RETURN (TRUE)		
+END FUNCTION -- order_tx --
+FUNCTION insertOrder()
+	DEFINE _insStat INTEGER
+	
+	LET _insStat = 00
+	WHENEVER ERROR CONTINUE
+	INSERT INTO orders (order_num, order_date, customer_num, po_num, ship_date, ship_instruct, ship_weight, ship_charge) VALUES(0, _grOrders.order_date, _grCustomer.customer_num, _grOrders. po_num, _grShip.ship_date, _grShip.ship_instruct, _grOrders.ship_weight, _grOrders.ship_charge)
+	WHENEVER ERROR STOP
+	IF STATUS < 0
+	THEN
+		LET _insStat = STATUS
+	ELSE
+		LET _grOrders.order_num = SQLCA.SQLERRD[2]
+		DISPLAY BY NAME _grOrders.order_num ATTRIBUTE (REVERSE, BLUE)
+	END IF
+	RETURN (_insStat)
+END FUNCTION -- insert_order --
+
+FUNCTION insert_order()
+	DEFINE _idx INTEGER,
+			_insStat INTEGER
+	
+	LET _insStat = 00
+	
+	FOR _idx = 1 TO ARR_COUNT()
+		IF _gaItems[_idx].stock_num IS NOT NULL
+		THEN
+			WHENEVER ERROR CONTINUE
+			INSERT INTO items VALUES (_gaItems[_idx].item_num, _grOrders.order_num, _gaItems[_idx].stock_num, _gaItems[_idx].manu_code, _gaItems[_idx].quantity, _gaItems[_idx].total_price)
+			WHENEVER ERROR STOP
+		
+			IF STATUS < 0
+			THEN
+				LET _insStat = STATUS
+				EXIT FOR
+			END IF
+		END IF
+	END FOR
+	RETURN (_insStat)	
+END FUNCTION
