@@ -42,7 +42,7 @@ MAIN
     DEFER INTERRUPT
 
     OPEN WINDOW _wMain AT 2, 3 WITH 18 ROWS, 76 COLUMNS ATTRIBUTE (BORDER)
-    OPEN FORM _frmOrders FORM "f_orders"
+    OPEN FORM _frmOrders FROM "f_orders"
     DISPLAY FORM _frmOrders
 
     CALL addOrder()
@@ -51,7 +51,7 @@ MAIN
     CLEAR SCREEN
 END MAIN
 
-FUNCTION addOrder(parametros)
+FUNCTION addOrder()
     INITIALIZE _grOrders.* TO NULL
 
     DISPLAY "ORDER ADD" AT 2, 34
@@ -198,7 +198,7 @@ FUNCTION custPopup()
 	RETURN _paCust[_idx].customer_num, _paCust[_idx].company
 END FUNCTION
 
-FUNCTION inputCust()
+FUNCTION inputOrders()
 	CALL clearLines(1, 16)
 	DISPLAY " Enter the order information and press RETURN. Press CTRL-W for help." AT 16, 1 ATTRIBUTE(REVERSE, YELLOW)
 	
@@ -228,11 +228,11 @@ FUNCTION inputCust()
 	RETURN (TRUE)
 END FUNCTION
 
-FUNCTION intputItems()
+FUNCTION inputItems()
 	DEFINE _currPa INTEGER,
 					_currSa INTEGER,
 					_stockCnt INTEGER,
-					stock_item LIKE stock.stock_item,
+					stock_item LIKE stock.stock_num,
 					_popup SMALLINT,
 					_keyval INTEGER,
 					_validKey SMALLINT
@@ -242,14 +242,14 @@ FUNCTION intputItems()
 	DISPLAY " Enter the item information and press Accept. Press CTRL-W for help." AT 16, 1 ATTRIBUTE(REVERSE, YELLOW)
 	LET INT_FLAG = FALSE
 	
-	INPUT ARRAY _gaItems FROM _saItems.*
-		BEFORE ROWID
-			LET _currPa = ARR_COUNT()
+	INPUT ARRAY _gaItems FROM _saItems.* HELP 62
+		BEFORE ROW
+			LET _currPa = ARR_CURR()
 			LET _currSa = SCR_LINE()
 		BEFORE INSERT
 			CALL renumItems()
 		BEFORE FIELD stock_num
-			MESSAGE "Enter a stock number or [ress F5 (CTRL-F) for a list."
+			MESSAGE "Enter a stock number or press F5 (CTRL-F) for a list."
 			LET _popup = FALSE
 		AFTER FIELD stock_num
 			IF _gaItems[_currPa].stock_num IS NULL
@@ -383,7 +383,7 @@ FUNCTION intputItems()
  	RETURN (TRUE)
 END FUNCTION -- input_items --
 
-FUNCTION
+FUNCTION renumItems()
 	DEFINE _pCurr INTEGER,
 				_pTotal INTEGER,
 				_sCurr INTEGER,
@@ -396,7 +396,7 @@ FUNCTION
 	LET _sTotal = 4
 	
 	FOR _k = _pCurr TO _pTotal
-		LET _gaItems[k].item_num = _k
+		LET _gaItems[_k].item_num = _k
 		IF _sCurr <= _sTotal
 		THEN
 			DISPLAY _k TO _saItems[_sCurr].item_num
@@ -406,7 +406,8 @@ FUNCTION
 END FUNCTION
 
 FUNCTION stockPopup(_stockItem)
-	DEFINE _paStock ARRAY[200] OF RECORD
+	DEFINE _stockItem INTEGER, 
+				_paStock ARRAY[200] OF RECORD
 				stock_num LIKE stock.stock_num,
 				description LIKE stock.description,
 				manu_code LIKE stock.manu_code,
@@ -421,18 +422,18 @@ FUNCTION stockPopup(_stockItem)
 		_overSize SMALLINT
 		
 		LET _arraySz = 200
-		OPEN WINDOW _wStockPop AT 7, 4 WITH 12 ROWS, 73 COLUMNS ATTRIBUTE (BORDER, FROM LINE 4)
+		OPEN WINDOW _wStockPop AT 7, 4 WITH 12 ROWS, 73 COLUMNS ATTRIBUTE (BORDER, FORM LINE 4)
 		OPEN FORM _frmStockSel FROM "f_stocksel"
 		DISPLAY FORM _frmStockSel 
 		
-		DISPLAY "Move cursor using F3, F4, and arrow keys." AT 1, 200
+		DISPLAY "Move cursor using F3, F4, and arrow keys." AT 1, 2
 		DISPLAY "Press Accept to select a stock item." AT 2,2
 		
 		LET _stStock = "SELECT stock_num, description, stock.manu_code, manufact.manu_name, unit, unit_price FROM stock, manufact"
 		
 		IF _stockItem IS NOT NULL
 		THEN
-			LET _stStock = _stStock CLIPPED, " WHERE stock_num = ", stock_item, " AND stock.manu_code = manufact.manu_code ORDER BY 1, 3"
+			LET _stStock = _stStock CLIPPED, " WHERE stock_num = ", _stockItem, " AND stock.manu_code = manufact.manu_code ORDER BY 1, 3"
 		ELSE
 			LET _stStock = _stStock CLIPPED, " WHERE stock.manu_code = manufact.manu_code ORDER BY 1, 3"
 		END IF
@@ -474,7 +475,7 @@ FUNCTION stockPopup(_stockItem)
 				LET _paStock[_idx].manu_code = NULL
 				IF _stockItem IS NULL
 				THEN
-					LET _stockItem[_idx].stock_num = NULL
+					LET _paStock[_idx].stock_num = NULL
 				END IF
 			END IF
 		END IF
@@ -489,7 +490,7 @@ FUNCTION dsplyTaxes()
 	LET _grCharges.sales_tax = _grOrders.order_amount * (_grCharges.tax_rate / 100)
 	DISPLAY BY NAME _grCharges.sales_tax
 	
-	LET _grCharges.order_total = _grOrders.orderAmount + _grCharges.sales_tax
+	LET _grCharges.order_total = _grOrders.order_amount + _grCharges.sales_tax
 	
 	DISPLAY BY NAME _grCharges.order_total
 END FUNCTION -- dsply_taxes --
@@ -503,18 +504,19 @@ FUNCTION orderAmount()
 		THEN
 			LET _ordAmount = _ordAmount + _gaItems[_idx].total_price
 		END IF
-	END FOREACH
+	END FOR
 	
 	RETURN (_ordAmount)
 END FUNCTION
 
 FUNCTION shipOrder()
 	CALL clearLines(1,1)
-	OPEN WIN _wShip AT 7, 6 WITH FORM "f_ship" ATTRIBUTE (BORDER, COMMENT LINE 3, PROMPT LINE 4)
+	OPEN WINDOW _wShip AT 7, 6 WITH FORM "f_ship" ATTRIBUTE (BORDER, COMMENT LINE 3, PROMPT LINE 4)
 	DISPLAY "Press Accept to save shiping information." AT 1, 1 ATTRIBUTE (REVERSE, YELLOW)
 	DISPLAY " Press Cancle to exit w/out saving. Press CTRL-W for Help." AT 2,1 ATTRIBUTE (REVERSE, YELLOW)
+	DISPLAY "SHIPPING INFORMATION" AT 4, 20
 	
-	DISPLAY BY NAME _grOrders.order_num, _grOrders.order_date, _grCustomer.customer_num, _grCustomer.company
+	INPUT BY NAME _grOrders.order_num, _grOrders.order_date, _grCustomer.customer_num, _grCustomer.company
 	
 	INITIALIZE _grShip.* TO NULL
 	IF inputShip()
@@ -534,7 +536,7 @@ FUNCTION inputShip()
 	LET _grShip.ship_charge = _grCharges.ship_charge
 	LET _grCharges.order_total = _grCharges.order_total + _grCharges.ship_charge;
 	
-	DISPLAY BY NAME _grShip.ship_date, _grShip.ship_instruct, _grShip.ship_weight, _grShip.ship_charge WITHOUT DEFAULTS
+	INPUT BY NAME _grShip.ship_date, _grShip.ship_instruct, _grShip.ship_weight, _grShip.ship_charge WITHOUT DEFAULTS
 		BEFORE FIELD ship_date
 			IF _grShip.ship_date IS NULL
 			THEN
@@ -555,7 +557,7 @@ FUNCTION inputShip()
 			IF _grShip.ship_weight IS NULL
 			THEN
 				LET _grShip.ship_weight = 0.00
-				DISPLAY BY NAME _gr.ship_weight
+				DISPLAY BY NAME _grShip.ship_weight
 			END IF
 			
 			IF _grShip.ship_weight < 0.00 
@@ -616,13 +618,12 @@ FUNCTION orderTx()
 	COMMIT WORK
 	RETURN (TRUE)		
 END FUNCTION -- order_tx --
-
 FUNCTION insertOrder()
 	DEFINE _insStat INTEGER
 	
 	LET _insStat = 00
 	WHENEVER ERROR CONTINUE
-	INSERT INTO orders (order_num, order_date, customer_num, po_num, ship_date, ship_instruct, ship_weight, ship_charge) VALUES(0, _grOrders.order_date, _grCustomer.customer_num, _grOrders. po_num, _grShip.ship_date, _grShip.ship_instruct, _grOrders.ship_weight, _grOrders.ship_charge)
+	INSERT INTO orders (order_num, order_date, customer_num, po_num, ship_date, ship_instruct, ship_weight, ship_charge) VALUES(0, _grOrders.order_date, _grCustomer.customer_num, _grOrders. po_num, _grShip.ship_date, _grShip.ship_instruct, _grShip.ship_weight, _grShip.ship_charge)
 	WHENEVER ERROR STOP
 	IF STATUS < 0
 	THEN
@@ -634,7 +635,7 @@ FUNCTION insertOrder()
 	RETURN (_insStat)
 END FUNCTION -- insert_order --
 
-FUNCTION insert_order()
+FUNCTION insertItems()
 	DEFINE _idx INTEGER,
 			_insStat INTEGER
 	
@@ -656,3 +657,191 @@ FUNCTION insert_order()
 	END FOR
 	RETURN (_insStat)	
 END FUNCTION
+
+FUNCTION clearLines(_numLines, _mRows)
+ 	DEFINE _numLines SMALLINT,
+ 			_mRows SMALLINT,
+ 			i SMALLINT
+
+ 	FOR i = 1 TO _numLines
+ 		DISPLAY " " AT _mRows,1
+ 		LET _mRows = _mRows + 1
+	END FOR
+END FUNCTION -- clearLines --
+
+FUNCTION promptWindow(_question, x,y)
+    DEFINE _question CHAR(48),
+            x,y SMALLINT,
+            _numRows SMALLINT,
+            _rowNum,i SMALLINT,
+            _answer CHAR(1),
+            _yesAns SMALLINT,
+            _nyAdded SMALLINT,
+            _invalidResp SMALLINT,
+            _quesLength SMALLINT,
+            _uopen SMALLINT,
+            _arraySz SMALLINT,
+            _localStat SMALLINT
+
+    LET _arraySz = 5
+    LET _numRows = 4 -- * _numRows value:
+ -- * 1 (for the window header)
+ -- * 1 (for the window border)
+ -- * 1 (for the empty line before
+ -- * the first line of message)
+ -- * 1 (for the empty line after
+ -- * the last line of message)
+    FOR i = 1 TO _arraySz
+        IF _message[i] IS NOT NULL
+        THEN
+            LET _numRows = _numRows + 1
+        END IF
+    END FOR
+
+    LET _uopen = TRUE
+    WHILE _uopen
+        WHENEVER ERROR CONTINUE
+        OPEN WINDOW _wPrompt AT x, y WITH _numRows ROWS, 52 COLUMNS ATTRIBUTE (BORDER, PROMPT LINE LAST)
+        WHENEVER ERROR STOP
+        LET _localStat = status
+        IF (_localStat < 0)
+        THEN
+            IF (_localStat = -1138) OR (_localStat = -1144)
+            THEN
+                MESSAGE "promptWindow() error: changing coordinates to 3,3."
+                SLEEP 2
+                LET x = 3
+                LET y = 3
+            ELSE
+                MESSAGE "promptWindow() error: ", _localStat USING "-<<<<<<<<<<<"
+                SLEEP 2
+                EXIT PROGRAM
+            END IF
+        ELSE
+            LET _uopen = FALSE
+        END IF
+    END WHILE
+    
+    DISPLAY " APPLICATION PROMPT" AT 1, 17 ATTRIBUTE (REVERSE, BLUE)
+
+    LET _rowNum = 3 -- * start text display at third line
+    FOR i = 1 TO _arraySz
+        IF _message[i] IS NOT NULL
+        THEN
+            DISPLAY _message[i] CLIPPED AT _rowNum, 2
+            LET _rowNum = _rowNum + 1
+        END IF
+    END FOR
+    
+    LET _yesAns = FALSE
+    LET _quesLength = LENGTH(_question)
+    IF _quesLength <= 41 
+    THEN -- * room enough to add "(n/y)" string
+        LET _question [_quesLength + 2, _quesLength + 7] = "(n/y):"
+    END IF
+    
+    LET _invalidResp = TRUE
+    WHILE _invalidResp
+        PROMPT _question CLIPPED, " " FOR _answer
+        IF _answer MATCHES "[nNyY]"
+        THEN
+            LET _invalidResp = FALSE
+            IF _answer MATCHES "[yY]"
+            THEN
+                LET _yesAns = TRUE
+            END IF
+        END IF
+    END WHILE
+    CALL initMsgs()
+    CLOSE WINDOW _wPrompt
+    RETURN (_yesAns)
+END FUNCTION -- promptWindow --
+
+FUNCTION initMsgs()
+ 	DEFINE i SMALLINT
+
+ 	FOR i = 1 TO 5
+ 		LET _message[i] = NULL
+ 	END FOR
+END FUNCTION -- initMsgs --
+
+FUNCTION messageWindow(x,y)
+    DEFINE _numRows SMALLINT,
+        x,y SMALLINT,
+        _rowNum,i SMALLINT,
+        _answer CHAR(1),
+        _arraySz SMALLINT -- size of the _message array
+
+    LET _arraySz = 5
+    LET _numRows = 4 -- * _numRows value:
+ -- * 1 (for the window header)
+ -- * 1 (for the window border)
+ -- * 1 (for the empty line before
+ -- * the first line of message)
+ -- * 1 (for the empty line after
+ -- * the last line of message)
+ 
+    FOR i = 1 TO _arraySz
+        IF _message[i] IS NOT NULL 
+        THEN
+            LET _numRows = _numRows + 1
+        END IF
+    END FOR
+    
+    OPEN WINDOW _wMsg AT x, y WITH _numRows ROWS, 52 COLUMNS ATTRIBUTE (BORDER, PROMPT LINE LAST)
+    DISPLAY " APPLICATION MESSAGE" AT 1, 17
+    ATTRIBUTE (REVERSE, BLUE)
+    LET _rowNum = 3 -- * start text display at third line
+    
+    FOR i = 1 TO _arraySz
+        IF _message[i] IS NOT NULL 
+        THEN
+            DISPLAY _message[i] CLIPPED AT _rowNum, 2
+            LET _rowNum = _rowNum + 1
+        END IF
+    END FOR
+    
+    PROMPT " Press RETURN to continue." FOR _answer
+    
+    CLOSE WINDOW _wMsg
+    CALL initMsgs()
+END FUNCTION -- messageWindow --
+
+FUNCTION msg(_str)
+    DEFINE _str CHAR(78)
+    MESSAGE _str
+    SLEEP 3
+    MESSAGE ""
+END FUNCTION -- msg --
+
+FUNCTION taxRates(_stateCode)
+ DEFINE _stateCode LIKE state.code,
+    _taxRate DECIMAL(4,2)
+    CASE _stateCode[1]
+    WHEN "A"
+        CASE _stateCode
+        WHEN "AK"
+            LET _taxRate = 0.0
+        WHEN "AL"
+            LET _taxRate = 0.0
+        WHEN "AR"
+            LET _taxRate = 0.0
+        WHEN "AZ"
+            LET _taxRate = 5.5
+        END CASE
+    WHEN "C"
+        CASE _stateCode
+        WHEN "CA"
+            LET _taxRate = 6.5
+        WHEN "CO"
+            LET _taxRate = 3.7
+        WHEN "CT"
+            LET _taxRate = 8.0
+        END CASE
+    WHEN "D"
+        LET _taxRate = 0.0
+    OTHERWISE
+        LET _taxRate = 0.0
+    END CASE
+RETURN (_taxRate)
+END FUNCTION -- tax_rates --

@@ -1,0 +1,34 @@
+DATABASE FORMONLY
+SCREEN
+{
+
+  *Factory          ¡G[a][f01       ]
+  #Department       ¡G[f02   ]
+  *Department name  ¡G[f03   ]
+   Warehouse Status ¡G[b]     Y:Valid  N:Invalid
+   Warehouse Code   ¡G[f04 ]
+   Warehouse Chinese¡G[f05                 ]
+   Warehouse English¡G[f08                 ]
+  *Changed By Whom  ¡G[f06   ]
+  *Changed Date     ¡G[f07                 ]
+ ----------------------------------------------
+¡° Note: After the  location is established,
+        it cannot be modified or Delete ,
+        only be disabled
+
+}
+END
+ATTRIBUTES
+a   = FORMONLY.manuf     TYPE CHAR, UPSHIFT, NOENTRY ;
+f01 = FORMONLY.codsc     TYPE CHAR, UPSHIFT, AUTONEXT;
+f02 = FORMONLY.dept      TYPE CHAR, UPSHIFT, AUTONEXT ;
+f03 = FORMONLY.deptsc    TYPE CHAR, UPSHIFT, NOENTRY  ;
+b   = FORMONLY.state     TYPE CHAR, UPSHIFT, AUTONEXT, INCLUDE = ('Y','N');
+f04 = FORMONLY.plno      TYPE CHAR, UPSHIFT, AUTONEXT;
+f05 = FORMONLY.place     TYPE CHAR;
+f08 = FORMONLY.place_e   TYPE CHAR;
+f06 = FORMONLY.upusr     TYPE CHAR,NOENTRY  ;
+f07 = FORMONLY.upday     TYPE DATETIME YEAR TO SECOND,NOENTRY  ;
+---------------------------------------
+
+END

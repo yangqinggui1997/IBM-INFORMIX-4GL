@@ -1,0 +1,35 @@
+DATABASE FORMONLY
+SCREEN
+{
+
+  *廠    別：[a][f01       ]
+  #部門代碼：[f02 ]
+   部門名稱：[f03                 ]   
+   倉別狀態：[b]     Y:可使用 N:不可使用
+   倉別代碼：[f04 ]
+   倉別中文：[f05                 ]
+   倉別英文：[f08                 ]  
+  *異動人員：[f06   ]
+  *異動日期：[f07                 ]
+ ---------------------------------------
+  ※注意：本存放地點建立後，不可以修改
+          刪除只能停用 
+
+}
+END
+ATTRIBUTES
+a   = FORMONLY.manuf     TYPE CHAR, UPSHIFT, NOENTRY ;
+f01 = FORMONLY.codsc     TYPE CHAR, UPSHIFT, AUTONEXT;
+f02 = FORMONLY.dept      TYPE CHAR, UPSHIFT, AUTONEXT ;
+f03 = FORMONLY.deptsc    TYPE CHAR, UPSHIFT, NOENTRY  ;
+b   = FORMONLY.state     TYPE CHAR, UPSHIFT, AUTONEXT, INCLUDE = ('Y','N');
+f04 = FORMONLY.plno      TYPE CHAR, UPSHIFT, AUTONEXT;
+f05 = FORMONLY.place     TYPE CHAR;
+f08 = FORMONLY.place_e   TYPE CHAR;
+f06 = FORMONLY.upusr     TYPE CHAR,NOENTRY  ;
+f07 = FORMONLY.upday     TYPE DATETIME YEAR TO SECOND,NOENTRY  ;
+---------------------------------------
+
+END
+
+
