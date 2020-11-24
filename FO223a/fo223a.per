@@ -1,0 +1,48 @@
+DATABASE FORMONLY
+SCREEN
+{
+    *廠別:[a][b         ]        *異動單號:[c          ]
+    品項:[d][e          ]        *異 常 日:[f            ]
+    *單位:[g  ][h       ]        備註:[y               ]
+    #異常原因:[j ][k          ]
+    
+ #類別#機台碼 線別 台位 孔位 #模具編號#工具 異常時間 總孔數 重量(Kg) 總損/雙 扣
+ ===== ======= ==== ==== ==== ========= ==== ======== ====== ======= ====== ===
+ [l  ][m     ][n  ][o  ][p  ][q       ][r  ][s      ][t    ][u      ][v     ][w]
+ [l  ][m     ][n  ][o  ][p  ][q       ][r  ][s      ][t    ][u      ][v     ][w]
+ [l  ][m     ][n  ][o  ][p  ][q       ][r  ][s      ][t    ][u      ][v     ][w]
+ [l  ][m     ][n  ][o  ][p  ][q       ][r  ][s      ][t    ][u      ][v     ][w]
+
+}
+END
+ATTRIBUTES
+    a = FORMONLY.manuf TYPE CHAR, NOENTRY;
+    b = FORMONLY.manufna TYPE CHAR, NOENTRY;
+    c = FORMONLY.errno TYPE CHAR, UPSHIFT, AUTONEXT;
+    d = FORMONLY.pitems TYPE CHAR, UPSHIFT, AUTONEXT; 
+    e = FORMONLY.pitemsna TYPE CHAR, NOENTRY; 
+    f = FORMONLY.errdat TYPE DATE, FORMAT = "mm/dd/yyyy", UPSHIFT, AUTONEXT; 
+    g = FORMONLY.dept TYPE CHAR, UPSHIFT, AUTONEXT;
+    h = FORMONLY.deptna TYPE CHAR, NOENTRY; 
+    y = FORMONLY.remark TYPE CHAR, UPSHIFT, AUTONEXT; 
+    j = FORMONLY.code TYPE CHAR, UPSHIFT, AUTONEXT; 
+    k = FORMONLY.codsc TYPE CHAR, NOENTRY;
+
+    l = FORMONLY.kind TYPE CHAR, UPSHIFT, NOENTRY;
+    m = FORMONLY.machcode TYPE CHAR, UPSHIFT, AUTONEXT; 
+    n = FORMONLY.machno TYPE CHAR, UPSHIFT, AUTONEXT; 
+    o = FORMONLY.posno  TYPE SMALLINT, UPSHIFT, AUTONEXT; 
+    p = FORMONLY.hole  TYPE SMALLINT, UPSHIFT, AUTONEXT; 
+    q = FORMONLY.rmodel TYPE CHAR, UPSHIFT, AUTONEXT; 
+    r = FORMONLY.tolcls TYPE CHAR, UPSHIFT, AUTONEXT; 
+    s = FORMONLY.errhr TYPE DECIMAL(8,2), UPSHIFT, AUTONEXT; 
+    t = FORMONLY.slosshole TYPE SMALLINT, UPSHIFT, AUTONEXT; 
+    u = FORMONLY.slossgw TYPE DECIMAL(8,4), FORMAT = "####.##", UPSHIFT, AUTONEXT; 
+    v = FORMONLY.slossprs TYPE DECIMAL(9,1), FORMAT = "###.##", UPSHIFT, AUTONEXT; 
+    w = FORMONLY.press TYPE CHAR, UPSHIFT, AUTONEXT, INCLUDE=('Y','N'),
+      COMMENTS="Y.同意扣工時 N.不扣工時";
+END
+INSTRUCTIONS
+    SCREEN RECORD SR[4] (machcode THRU press)
+
+
