@@ -1,0 +1,36 @@
+DATABASE FORMONLY
+SCREEN
+{
+   *Manuf: [f] [f1                     ]		
+   #Pitems: [g] [f2                     ]		
+   *Dept: [f3  ] [f4                     ]	
+   
+   Kind   Mach_cn    Mach_en  MachCode  Posno  Hole  Lossprs Losshr  Lossgw
+   === ============ ========= ========= ===== ====== ======= ======= =======
+   [d] [d1        ] [d2     ] [d3     ] [d4 ] [d5  ] [d6   ] [d7   ] [d8   ]
+   [d] [d1        ] [d2     ] [d3     ] [d4 ] [d5  ] [d6   ] [d7   ] [d8   ]
+   [d] [d1        ] [d2     ] [d3     ] [d4 ] [d5  ] [d6   ] [d7   ] [d8   ]
+   [d] [d1        ] [d2     ] [d3     ] [d4 ] [d5  ] [d6   ] [d7   ] [d8   ]
+   [d] [d1        ] [d2     ] [d3     ] [d4 ] [d5  ] [d6   ] [d7   ] [d8   ]
+
+}
+END
+ATTRIBUTES
+f    = FORMONLY.manuf      				TYPE CHAR     , NOENTRY;
+f1   = FORMONLY.manufna    			  TYPE CHAR     , NOENTRY;
+g    = FORMONLY.pitems        		TYPE CHAR     , UPSHIFT, AUTONEXT;
+f2   = FORMONLY.pitemsna		      TYPE CHAR     , NOENTRY;
+f3   = FORMONLY.dept        			TYPE CHAR     , UPSHIFT, AUTONEXT;
+f4   = FORMONLY.deptna			      TYPE CHAR     , NOENTRY;
+d  	 = FORMONLY.kind				      TYPE CHAR     , UPSHIFT, AUTONEXT;
+d1   = FORMONLY.mach_cn     			TYPE CHAR     , AUTONEXT;
+d2   = FORMONLY.mach_en				    TYPE CHAR     , AUTONEXT;
+d3   = FORMONLY.machcode     			TYPE CHAR     , UPSHIFT, AUTONEXT;
+d4   = FORMONLY.posno     				TYPE SMALLINT , AUTONEXT;
+d5   = FORMONLY.hole	     				TYPE SMALLINT , AUTONEXT;
+d6 	 = FORMONLY.lossprs   				TYPE DECIMAL, FORMAT = "##.##", AUTONEXT;
+d7 	 = FORMONLY.losshr   					TYPE DECIMAL, FORMAT = "##.##", AUTONEXT;
+d8 	 = FORMONLY.lossgw   					TYPE DECIMAL, FORMAT = "##.##", AUTONEXT;
+INSTRUCTIONS
+SCREEN RECORD SR[5] (kind THRU lossgw)
+END
