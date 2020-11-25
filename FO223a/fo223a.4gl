@@ -9,7 +9,6 @@ GLOBALS 'kmgbl.4gl'
 DEFINE PH, PH1 RECORD
         manuf     LIKE w214.manuf,  
         manufna   CHAR(23), 
-        errno     LIKE w214.errno,
         pitems    LIKE w214.pitems,     
         pitemsna  CHAR(23),
         errdat    LIKE w214.errdat,   
@@ -17,7 +16,7 @@ DEFINE PH, PH1 RECORD
         deptna    CHAR(23),
         remark    LIKE w214.remark,
         code      LIKE w214.code,
-        codsc     LIKE j02.codsc        
+        codsc     LIKE j02.codsc    
         END RECORD,
     P1,P2  ARRAY[99] OF RECORD
          kind LIKE w213.mach_cn,
@@ -33,7 +32,9 @@ DEFINE PH, PH1 RECORD
          slossprs LIKE w215.slossprs, 
          press LIKE w215.press
        END RECORD,
-
+      P_errno  ARRAY[99] OF RECORD
+         errno LIKE w214.errno
+      END RECORD
       Wrowid  ARRAY[99] OF INTEGER   ,
       scr_ary      INTEGER,
       wk_flagOpenCur1 SMALLINT,
@@ -224,7 +225,7 @@ FUNCTION inqfun(iv_option)
    END IF
    ------  
 
-   LET qry_str = "SELECT UNIQUE a.manuf,'' manufna , a.errno ,a.pitems,'' pitemsna,",
+   LET qry_str = "SELECT UNIQUE a.manuf,'' manufna, a.pitems,'' pitemsna,",
                   " a.errdat, a.dept,'' deptna, a.remark, a.code, b.codsc",
                   " FROM w214 as a JOIN j02 as b ON a.code = b.code WHERE codk = '799' ",
                   " AND a.manuf = '",gv_manuf,"' AND ",wh_str CLIPPED,
@@ -232,10 +233,10 @@ FUNCTION inqfun(iv_option)
    PREPARE cnt_exe FROM qry_str
    DECLARE cnt_cur SCROLL CURSOR FOR cnt_exe
 
-   LET qry_str3 = "SELECT a.kind, a.machcode, a.machno, a.posno, a.hole, a.rmodel, a.tolcls,",
+   LET qry_str3 = "SELECT b.errno, a.kind, a.machcode, a.machno, a.posno, a.hole, a.rmodel, a.tolcls,",
                   " a.errhr, a.slosshole, a.slossgw, a.slossprs, a.press, a.ROWID",
-                  " FROM w215 AS a ",
-                  " WHERE errno = ?", 
+                  " FROM w215 AS a JOIN w214 AS b ON a.errno = b.errno",
+                  " WHERE b.manuf = ? AND b.pitems = ? AND b.dept = ? AND b.errdat = ? AND b.code = ? AND b.remark = ?", 
                   " ORDER BY 1"
    PREPARE qry_exe FROM qry_str3
    DECLARE std_curs SCROLL CURSOR FOR qry_exe
@@ -250,6 +251,7 @@ FUNCTION inq100(iv_phPosition)
    CALL readfun1(iv_phPosition)
    
    FOR cc = 1 TO max_ary
+      INITIALIZE P_errno[cc].* TO NULL
       INITIALIZE P1[cc].* TO NULL
       INITIALIZE P2[cc].* TO NULL
       INITIALIZE Wrowid[cc] TO NULL
@@ -257,7 +259,7 @@ FUNCTION inq100(iv_phPosition)
 
    CALL openCursorStd()
    FOR cc = 1 TO max_ary
-      FETCH std_curs INTO P1[cc].*,Wrowid[cc]
+      FETCH std_curs INTO P_errno[cc].errno, P1[cc].*,Wrowid[cc]
       IF STATUS != 0 THEN
          EXIT FOR
       END IF
@@ -301,11 +303,10 @@ FUNCTION add100(iv_option1, iv_option2, iv_record)
    DEFINE iv_option1, iv_option2 SMALLINT
    DEFINE wk_key SMALLINT
    DEFINE wk_prompt CHAR(1)
-
+   
    DEFINE iv_record RECORD
       manuf     LIKE w214.manuf,  
       manufna   CHAR(23), 
-      errno     LIKE w214.errno,
       pitems    LIKE w214.pitems,     
       pitemsna  CHAR(23),
       errdat    LIKE w214.errdat,   
@@ -422,21 +423,6 @@ FUNCTION add100(iv_option1, iv_option2, iv_record)
          END IF
    END INPUT 
 END FUNCTION
-#-------------------------------------------------------------------------------
-FUNCTION checkDuplicate(iv_index)
-   DEFINE iv_index INTEGER
-   DEFINE wk_count INTEGER
-   LET wk_count = 0
-
-   SELECT COUNT(*) INTO wk_count FROM w215 WHERE errno = PH.errno AND machcode = P1[iv_index].machcode AND kind = P1[iv_index].kind AND machno = P1[iv_index].machno AND posno = P1[iv_index].posno AND hole = P1[iv_index].hole AND rmodel = P1[iv_index].rmodel AND tolcls = P1[iv_index].tolcls
-
-   IF wk_count
-   THEN  
-      RETURN (TRUE)
-   END IF
-
-   RETURN (FALSE)
-END FUNCTION
 #-------------------------------------------------------------------
 FUNCTION checkExists(iv_manuf, iv_pitems, iv_dept, iv_machcode)
    DEFINE iv_manuf LIKE w213.manuf
@@ -472,6 +458,10 @@ FUNCTION add200(iv_option)
          ELSE
             DISPLAY "This row is ", aln USING "<<#"," row" AT 22, 1
          END IF
+         IF iv_option 
+         THEN
+            DISPLAY BY NAME P_errno[aln].*
+         END IF
       BEFORE FIELD machcode
          ERROR "Press CONTROL-W to show options."
       BEFORE FIELD press
@@ -502,6 +492,11 @@ FUNCTION add200(iv_option)
                NEXT FIELD machcode
             END IF
             NEXT FIELD machno
+         END IF
+      ON KEY (UP, DOWN)
+         IF iv_option 
+         THEN
+            DISPLAY BY NAME P_errno[aln].*
          END IF
       AFTER ROW
          LET wk_key = FGL_LASTKEY()
@@ -690,25 +685,7 @@ FUNCTION add200(iv_option)
                IF (P1[aln].press IS NOT NULL OR P1[aln].press NOT MATCHES "[ ]") AND P1[aln].press NOT MATCHES "[YN]" THEN
                   NEXT FIELD press
                END IF
-            -- check duplicate
-               IF (NOT iv_option) OR (iv_option AND (P2[aln].machcode != P1[aln].machcode OR P2[aln].machno != P1[aln].machno OR P2[aln].posno != P1[aln].posno OR P2[aln].hole != P1[aln].hole OR P2[aln].rmodel != P1[aln].rmodel OR P2[aln].tolcls != P1[aln].tolcls OR PH1.pitems != PH.pitems OR PH1.dept != PH.dept))
-               THEN
-                  IF checkDuplicate(aln)
-                  THEN  
-                     ERROR mess[2]
-                     IF ((PH1.pitems != PH.pitems OR PH1.dept != PH.dept) AND iv_option) OR NOT iv_option
-                     THEN
-                        LET wk_goto = TRUE
-                        GOTO lblCallAdd100
-                     END IF
-                     IF (iv_option AND (P2[aln].machcode != P1[aln].machcode OR P2[aln].machno != P1[aln].machno OR P2[aln].posno != P1[aln].posno OR P2[aln].hole != P1[aln].hole OR P2[aln].rmodel != P1[aln].rmodel OR P2[aln].tolcls != P1[aln].tolcls))
-                     THEN 
-                        NEXT FIELD machcode
-                     END IF
-                  END IF
-               ELSE
-                  IF wk_goto THEN CALL add200(TRUE) END IF
-               END IF
+
                IF P1[aln].errhr     IS NULL THEN LET P1[aln].errhr     = 0   END IF
                IF P1[aln].slosshole IS NULL THEN LET P1[aln].slosshole = 0   END IF
                IF P1[aln].slossgw   IS NULL THEN LET P1[aln].slossgw   = 0.0 END IF
@@ -928,25 +905,6 @@ FUNCTION add200(iv_option)
                IF (P1[aln].press IS NOT NULL OR P1[aln].press NOT MATCHES "[ ]") AND P1[aln].press NOT MATCHES "[YN]" THEN
                   NEXT FIELD press
                END IF
-            -- check duplicate
-               IF (NOT iv_option) OR (iv_option AND (P2[aln].machcode != P1[aln].machcode OR P2[aln].machno != P1[aln].machno OR P2[aln].posno != P1[aln].posno OR P2[aln].hole != P1[aln].hole OR P2[aln].rmodel != P1[aln].rmodel OR P2[aln].tolcls != P1[aln].tolcls OR PH1.pitems != PH.pitems OR PH1.dept != PH.dept))
-               THEN
-                  IF checkDuplicate(aln)
-                  THEN  
-                     ERROR mess[2]
-                     IF ((PH1.pitems != PH.pitems OR PH1.dept != PH.dept) AND iv_option) OR NOT iv_option
-                     THEN
-                        LET wk_goto = TRUE
-                        GOTO lblCallAdd100
-                     END IF
-                     IF (iv_option AND (P2[aln].machcode != P1[aln].machcode OR P2[aln].machno != P1[aln].machno OR P2[aln].posno != P1[aln].posno OR P2[aln].hole != P1[aln].hole OR P2[aln].rmodel != P1[aln].rmodel OR P2[aln].tolcls != P1[aln].tolcls))
-                     THEN 
-                        NEXT FIELD machcode
-                     END IF
-                  END IF
-               ELSE
-                  IF wk_goto THEN CALL add200(TRUE) END IF
-               END IF
                IF P1[aln].errhr     IS NULL THEN LET P1[aln].errhr     = 0   END IF
                IF P1[aln].slosshole IS NULL THEN LET P1[aln].slosshole = 0   END IF
                IF P1[aln].slossgw   IS NULL THEN LET P1[aln].slossgw   = 0.0 END IF
@@ -992,6 +950,7 @@ FUNCTION addfun()
    DEFINE wk_count, wk_count1 INTEGER
    DEFINE wk_incorrect INTEGER
    DEFINE wk_countAddSuccess INTEGER
+   DEFINE wk_errno LIKE w214.errno
 
    DISPLAY "" AT 23, 1
    DISPLAY "" AT 22, 1
@@ -1056,7 +1015,7 @@ FUNCTION addfun()
          
             IF P1[cc].press NOT MATCHES "[YN]" THEN LET P1[cc].press = "N" END IF
             --
-            LET PH.errno = get_no("R", PH.dept)
+            LET wk_errno = get_no("R", PH.dept)
             INSERT INTO w214 
             VALUES (PH.manuf, PH.errno, PH.errdat, PH.pitems, PH.dept, PH.code, PH.remark,login_usr, CURRENT YEAR TO SECOND)
             IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
@@ -1066,7 +1025,7 @@ FUNCTION addfun()
             END IF
             
             INSERT INTO w215 
-            VALUES (PH.errno, P1[cc].kind, P1[cc].machcode, P1[cc].machno, P1[cc].posno, P1[cc].hole, P1[cc].rmodel, P1[cc].tolcls, P1[cc].errhr, P1[cc].slosshole, P1[cc].slossgw, P1[cc].slossprs, P1[cc].press, login_usr, CURRENT YEAR TO SECOND)
+            VALUES (wk_errno, P1[cc].kind, P1[cc].machcode, P1[cc].machno, P1[cc].posno, P1[cc].hole, P1[cc].rmodel, P1[cc].tolcls, P1[cc].errhr, P1[cc].slosshole, P1[cc].slossgw, P1[cc].slossprs, P1[cc].press, login_usr, CURRENT YEAR TO SECOND)
             IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
                ROLLBACK WORK
                ERROR mess[04] CLIPPED
@@ -1097,7 +1056,6 @@ FUNCTION addfun()
 END FUNCTION
 #-------------------------------------------------------------------
 FUNCTION updfun()
-   DEFINE wk_count, wk_count1 INTEGER
    DEFINE wk_incorrect INTEGER
    DEFINE wk_countUpdateSuccess INTEGER
    DEFINE wk_flagContent, wk_flagHead SMALLINT
@@ -1106,7 +1064,6 @@ FUNCTION updfun()
    DISPLAY "" AT 22, 1
 
    LET wk_countUpdateSuccess = 0
-   LET wk_flagHead = FALSE
 
    IF op_code = 'N' THEN
       ERROR mess[16] CLIPPED
@@ -1135,31 +1092,19 @@ FUNCTION updfun()
       RETURN
    END IF
 
-   LET wk_count = 0
-   LET wk_count1 = 0
-   
    BEGIN WORK
-   IF PH1.pitems != PH.pitems OR PH1.dept != PH.dept OR PH1.code != PH.code OR PH1.errno != PH.errno OR PH1.errdat != PH.errdat OR PH1.remark != PH.remark
+   IF PH1.pitems != PH.pitems OR PH1.dept != PH.dept OR PH1.code != PH.code OR PH1.errdat != PH.errdat OR PH1.remark != PH.remark
    THEN
-      SELECT COUNT(*) INTO wk_count FROM w214
-      WHERE manuf = PH.manuf AND pitems = PH.pitems AND errdat = PH.errdat AND errno = PH.errno
-      SELECT COUNT(*) INTO wk_count1 FROM w215
-      WHERE errno = PH.errno
-      IF wk_count OR wk_count1 THEN
-         ERROR mess[2] CLIPPED, mess[54] CLIPPED, "!" 
+      UPDATE w214 
+      SET (errdat, pitems, dept, code, remark, upusr, upday)
+      = (PH.errdat, PH.pitems, PH.dept, PH.code, PH.remark,login_usr, CURRENT YEAR TO SECOND)
+      WHERE ROWID = Wrowid[cc1]
+      IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
+         ROLLBACK WORK
+         ERROR mess[04] CLIPPED
          RETURN
-      ELSE
-         UPDATE w214 
-         SET (errno, errdat, pitems, dept, code, remark, upusr, upday)
-         = (PH.errno, PH.errdat, PH.pitems, PH.dept, PH.code, PH.remark,login_usr, CURRENT YEAR TO SECOND)
-         WHERE ROWID = Wrowid[cc1]
-         IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
-            ROLLBACK WORK
-            ERROR mess[04] CLIPPED
-            RETURN
-         END IF
-         LET wk_flagHead = TRUE 
       END IF
+      LET wk_flagHead = TRUE 
    END IF
    FOR cc1 = 1 TO max_ary
       LET wk_flagContent = FALSE
@@ -1185,8 +1130,8 @@ FUNCTION updfun()
             IF P1[cc1].press NOT MATCHES "[YN]" THEN LET P1[cc1].press = "N" END IF
             --
             UPDATE w215 
-            SET (errno, machcode, kind, machno, posno, hole, rmodel, tolcls, errhr, slosshole, slossgw, slossprs, press, upusr, upday)
-            = (PH.errno, P1[cc1].machcode, P1[cc1].kind, P1[cc1].machno, P1[cc1].posno, P1[cc1].hole, P1[cc1].rmodel, P1[cc1].tolcls, P1[cc1].errhr, P1[cc1].slosshole, P1[cc1].slossgw, P1[cc1].slossprs, P1[cc1].press, login_usr, CURRENT YEAR TO SECOND)
+            SET (machcode, kind, machno, posno, hole, rmodel, tolcls, errhr, slosshole, slossgw, slossprs, press, upusr, upday)
+            = (P1[cc1].machcode, P1[cc1].kind, P1[cc1].machno, P1[cc1].posno, P1[cc1].hole, P1[cc1].rmodel, P1[cc1].tolcls, P1[cc1].errhr, P1[cc1].slosshole, P1[cc1].slossgw, P1[cc1].slossprs, P1[cc1].press, login_usr, CURRENT YEAR TO SECOND)
             WHERE ROWID = Wrowid[cc1]
             IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
                ROLLBACK WORK
@@ -1378,7 +1323,7 @@ FUNCTION disfun()
    LET cc = 1
    CALL openCursorStd()
    WHILE TRUE
-      FETCH std_curs INTO P1[cc].*,Wrowid[cc]
+      FETCH std_curs INTO P_errno[cc].*,P1[cc].*,Wrowid[cc]
       IF STATUS != 0 THEN
          EXIT WHILE
       END IF
@@ -1394,6 +1339,10 @@ FUNCTION disfun()
                     max_ary USING "<<<#"," 筆" AT 1, 1
             DISPLAY "共 ",cc USING "<<<#"," 筆 " AT 23, 1
             DISPLAY ARRAY P1 TO SR.*
+               ON KEY(UP, DOWN)
+                  LET aln = ARR_CURR()
+                  DISPLAY BY NAME P_errno[aln].*
+            END DISPLAY
             LET ans2 = "N"
             PROMPT "繼續往下查詢 (y/n)? " FOR CHAR ans2
          ELSE
@@ -1436,6 +1385,10 @@ FUNCTION disfun()
       DISPLAY "Total ",cc USING "<<<#"," row " AT 23, 1
    END IF   	   
    DISPLAY ARRAY P1 TO SR.*
+      ON KEY(UP, DOWN)
+         LET aln = ARR_CURR()
+         DISPLAY BY NAME P_errno[aln].*
+   END DISPLAY
 END FUNCTION
 #---------------------------------------------------------------------
 FUNCTION curfun()
@@ -1640,7 +1593,7 @@ FUNCTION openCursorStd()
    THEN
       CLOSE std_curs
    END IF
-   OPEN std_curs USING PH.errno
+   OPEN std_curs USING PH.manuf, PH.pitems, PH.dept, PH.errdat, PH.code, PH.remark
    LET wk_flagOpenCur2 = TRUE
 END FUNCTION
 
