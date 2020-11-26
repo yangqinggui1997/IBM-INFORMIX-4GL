@@ -14,6 +14,7 @@ DEFINE PH, PH1 RECORD
         errdat    LIKE w214.errdat,   
         dept      LIKE w214.dept,  
         deptna    CHAR(23),
+        errno     LIKE w214.errno,
         remark    LIKE w214.remark,
         code      LIKE w214.code,
         codsc     LIKE j02.codsc    
@@ -31,15 +32,17 @@ DEFINE PH, PH1 RECORD
          slossgw LIKE w215.slossgw, 
          slossprs LIKE w215.slossprs, 
          press LIKE w215.press
-       END RECORD,
+      END RECORD,
       P_errno  ARRAY[99] OF RECORD
          errno LIKE w214.errno
-      END RECORD
+      END RECORD,
       Wrowid  ARRAY[99] OF INTEGER   ,
       scr_ary      INTEGER,
       wk_flagOpenCur1 SMALLINT,
       wk_flagOpenCur2 SMALLINT,
-      wk_flagNoData SMALLINT
+      wk_flagNoData SMALLINT,
+      wk_flag SMALLINT,
+      wk_flag1 SMALLINT
 
       DEFINE wk_posno    LIKE w213.posno
       DEFINE wk_hole     LIKE w213.hole
@@ -158,7 +161,8 @@ END FUNCTION
 #----------------------------------------------------------------------
 FUNCTION inqfun(iv_option)
    DEFINE iv_option SMALLINT
-
+   DEFINE wk_str CHAR(100)
+   
    CLEAR FORM
    DISPLAY "" AT 23, 1
    DISPLAY "" AT 22, 1
@@ -166,7 +170,7 @@ FUNCTION inqfun(iv_option)
    INITIALIZE PH.* TO NULL #Reset PH cursor for begining search
    IF iv_option
    THEN  
-      CONSTRUCT BY NAME wh_str ON PH.pitems, PH.dept, PH.code, PH.errno, PH.errdat, PH.remark
+      CONSTRUCT BY NAME wh_str ON a.pitems, a.dept, b.code, a.errno, a.errdat, a.remark
          BEFORE CONSTRUCT
             LET PH.manuf = gv_manuf
             LET PH.manufna  = cal_j02(7,PH.manuf)
@@ -224,32 +228,52 @@ FUNCTION inqfun(iv_option)
       LET wh_str = "1=1"
    END IF
    ------  
-
+   LET wk_str = ""
+   IF frmtyp = "2"
+   THEN 
+      LET wk_str = "b.codmk"
+   ELSE
+      LET wk_str = "b.codsc"    
+   END IF
    LET qry_str = "SELECT UNIQUE a.manuf,'' manufna, a.pitems,'' pitemsna,",
-                  " a.errdat, a.dept,'' deptna, a.remark, a.code, b.codsc",
-                  " FROM w214 as a JOIN j02 as b ON a.code = b.code WHERE codk = '799' ",
+                  " a.errdat, a.dept,'' deptna, '' errno, a.remark, a.code, ", wk_str CLIPPED,
+                  " FROM w214 as a JOIN j02 as b ON a.code = b.code WHERE b.codk = '799' ",
                   " AND a.manuf = '",gv_manuf,"' AND ",wh_str CLIPPED,
                   " ORDER BY 1"
-   PREPARE cnt_exe FROM qry_str
+   PREPARE cnt_exe FROM qry_str  
    DECLARE cnt_cur SCROLL CURSOR FOR cnt_exe
 
+   LET wk_str = ""
+   LET wk_flag = FALSE
+   LET wk_flag1 = FALSE
+
+   IF PH.errno IS NOT NULL OR PH.errno NOT MATCHES "[ ]"
+   THEN
+      LET wk_str = " AND b.errno = ?"
+      LET wk_flag = TRUE
+   END IF
+   IF PH.remark IS NOT NULL OR PH.remark NOT MATCHES "[ ]" THEN
+      LET wk_str = wk_str, " AND b.remark = ?"
+      LET wk_flag1 = TRUE
+   END IF
+   
    LET qry_str3 = "SELECT b.errno, a.kind, a.machcode, a.machno, a.posno, a.hole, a.rmodel, a.tolcls,",
                   " a.errhr, a.slosshole, a.slossgw, a.slossprs, a.press, a.ROWID",
                   " FROM w215 AS a JOIN w214 AS b ON a.errno = b.errno",
-                  " WHERE b.manuf = ? AND b.pitems = ? AND b.dept = ? AND b.errdat = ? AND b.code = ? AND b.remark = ?", 
+                  " WHERE b.manuf = ? AND b.pitems = ? AND b.dept = ? AND b.errdat = ? AND b.code = ?", wk_str CLIPPED,
                   " ORDER BY 1"
+
    PREPARE qry_exe FROM qry_str3
    DECLARE std_curs SCROLL CURSOR FOR qry_exe
-
    CALL reopen() 
-   LET op_code = "Y"                   
+   LET op_code = "Y" 
+                      
 END FUNCTION
 #----------------------------------------------------------------
 FUNCTION inq100(iv_phPosition)
    DEFINE iv_phPosition INTEGER
 
    CALL readfun1(iv_phPosition)
-   
    FOR cc = 1 TO max_ary
       INITIALIZE P_errno[cc].* TO NULL
       INITIALIZE P1[cc].* TO NULL
@@ -283,6 +307,8 @@ FUNCTION inq100(iv_phPosition)
          RETURN
       END IF
    END IF
+   LET PH.errno = P_errno[1].errno
+   DISPLAY BY NAME PH.errno
    LET wk_flagNoData = FALSE
 END FUNCTION
 #----------------------------------------------------------------
@@ -312,6 +338,7 @@ FUNCTION add100(iv_option1, iv_option2, iv_record)
       errdat    LIKE w214.errdat,   
       dept      LIKE w214.dept,  
       deptna    CHAR(23),
+      errno     LIKE w214.errno,
       remark    LIKE w214.remark,
       code      LIKE w214.code,
       codsc     LIKE j02.codsc        
@@ -398,22 +425,12 @@ FUNCTION add100(iv_option1, iv_option2, iv_record)
                ERROR mess[15]
                NEXT FIELD errdat
             END IF
-            IF iv_option1
+
+            IF PH1.pitems NOT MATCHES PH.pitems OR PH1.dept NOT MATCHES PH.dept
             THEN
-               IF PH1.dept != PH.dept
-               THEN
-                  LET PH.errno = get_no('R', PH.dept)
-               END IF
-            ELSE
-               LET PH.errno = get_no('R', PH.dept)
-            END IF
-            IF PH.errno IS NULL OR PH.errno MATCHES "[ ]"
-            THEN
-               ERROR mess[9] CLIPPED
-               NEXT FIELD dept
-            ELSE
-               DISPLAY BY NAME PH.errno
-            END IF
+               CALL SET_COUNT(cc)
+               CALL add200(TRUE, FALSE)
+            END IF 
          ELSE
             PROMPT "Do you really want to cancle input (y/Y for Yes, another for No)? " FOR wk_prompt
             IF wk_prompt NOT MATCHES "[yY]"
@@ -436,8 +453,9 @@ FUNCTION checkExists(iv_manuf, iv_pitems, iv_dept, iv_machcode)
    RETURN wk_kind
 END FUNCTION
 #-------------------------------------------------------------------
-FUNCTION add200(iv_option)
+FUNCTION add200(iv_option, iv_option1)
    DEFINE iv_option SMALLINT
+   DEFINE iv_option1 SMALLINT
    DEFINE wk_key SMALLINT
    DEFINE wk_cc SMALLINT
    DEFINE wk_goto SMALLINT
@@ -445,8 +463,10 @@ FUNCTION add200(iv_option)
    DEFINE wk_cyctime LIKE w55.cyctime
    DEFINE wk_cycqty  DECIMAL(5,0)
    DEFINE wk_prompt CHAR(1)
+   DEFINE wk_recordDel INTEGER
 
    LET wk_goto = FALSE
+   LET wk_recordDel = 0
 
    INPUT ARRAY P1 WITHOUT DEFAULTS FROM SR.*
       BEFORE ROW
@@ -467,13 +487,60 @@ FUNCTION add200(iv_option)
       BEFORE FIELD press
          ERROR "Y.同意扣工時 N.不扣工時"
       ON KEY (CONTROL-Z)
-         LABEL lblCallAdd100:
          CALL add100(TRUE, FALSE, PH.*)
          IF INT_FLAG THEN
-            LET INT_FLAG = FALSE
+            LET INT_FLAG = FALSE 
             CLEAR FORM
             ERROR mess[5] CLIPPED
             RETURN
+         END IF
+      ON KEY (CONTROL-O)
+         IF iv_option1
+         THEN
+            PROMPT "Do you really want to remove this record (y/Y for Yes, another for No)? " FOR wk_prompt
+            IF wk_prompt MATCHES "[yY]"
+            THEN
+               INITIALIZE P1[aln].* TO NULL
+               DISPLAY P1[aln].* TO SR[sln].* ATTRIBUTE(REVERSE)
+               BEGIN WORK
+                  DELETE FROM w214 WHERE ROWID = Wrowid[aln]
+                  IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
+                     ERROR mess[63] CLIPPED
+                     ROLLBACK WORK
+                  END IF
+                  LET wk_recordDel = wk_recordDel + 1
+               COMMIT WORK
+            END IF
+         END IF
+      ON KEY (CONTROL-M)
+         IF iv_option1
+         THEN
+            PROMPT "Do you really want to remove all record (y/Y for Yes, another for No)? " FOR wk_prompt
+            IF wk_prompt MATCHES "[yY]"
+            THEN
+               LET cnt1 = 0
+               BEGIN WORK
+                  FOR cc1 = 1 TO cc
+                     DELETE FROM w215 WHERE ROWID = Wrowid[cc1]
+                     IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
+                        ERROR mess[63] CLIPPED
+                        ROLLBACK WORK
+                        RETURN
+                     ELSE
+                        DELETE FROM w214 WHERE errno = P_errno[cc1].errno
+                        IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
+                           ERROR mess[63] CLIPPED
+                           ROLLBACK WORK
+                           RETURN
+                        END IF
+                        LET cnt1 = cnt1 + 1
+                     END IF
+                  END FOR
+               COMMIT WORK
+               ERROR mess[53] CLIPPED, cnt1 USING "<<< & ",mess[41] CLIPPED
+               EXIT INPUT
+               CALL reopen()
+            END IF
          END IF
       ON KEY(F5, CONTROL-W)
          IF INFIELD(machcode)
@@ -493,15 +560,17 @@ FUNCTION add200(iv_option)
             END IF
             NEXT FIELD machno
          END IF
-      ON KEY (UP, DOWN)
-         IF iv_option 
-         THEN
-            DISPLAY BY NAME P_errno[aln].*
-         END IF
-      AFTER ROW
-         LET wk_key = FGL_LASTKEY()
-         IF wk_key == FGL_KEYVAL("ACCEPT") OR wk_key == FGL_KEYVAL("ESC") OR wk_key == FGL_KEYVAL("TAB")
-         THEN
+      AFTER FIELD machcode
+      IF P1[aln].machcode IS NULL OR P1[aln].machcode MATCHES "[ ]"
+      THEN
+         LET P1[aln].kind = NULL
+         DISPLAY P1[aln].kind TO SR[sln].kind 
+      END IF
+      AFTER ROW  
+         -- LET wk_key = FGL_LASTKEY()
+         -- IF wk_key == FGL_KEYVAL("ACCEPT") OR wk_key == FGL_KEYVAL("ESC") OR wk_key == FGL_KEYVAL("TAB")
+         -- THEN
+         IF NOT iv_option1 THEN
             IF (P1[aln].machcode IS NOT NULL OR P1[aln].machcode NOT MATCHES "[ ]")
                OR (P1[aln].machno IS NOT NULL OR P1[aln].machno NOT MATCHES "[ ]")
                OR (P1[aln].posno IS NOT NULL OR P1[aln].posno NOT MATCHES "[ ]")
@@ -533,7 +602,7 @@ FUNCTION add200(iv_option)
                   END IF
                END IF
             -- check posno and hole fields
-               IF (P1[aln].posno IS NULL OR P1[aln].posno MATCHES "[ ]") AND (P1[aln].hole IS NULL OR P1[aln].hole MATCHES "[ ]")
+               IF (P1[aln].posno IS NULL OR P1[aln].posno = 0) AND (P1[aln].hole IS NULL OR P1[aln].hole = 0)
                THEN
                   SELECT posno, hole INTO wk_posno, wk_hole
                   FROM w213 
@@ -545,10 +614,10 @@ FUNCTION add200(iv_option)
                      LET P1[aln].slosshole = wk_posno * wk_hole
                   END IF	          	 
                END IF
-               IF (P1[aln].posno IS NOT NULL OR P1[aln].posno NOT MATCHES "[ ]") AND (P1[aln].hole IS NULL OR P1[aln].hole MATCHES "[ ]") THEN
+               IF (P1[aln].posno IS NOT NULL OR P1[aln].posno != 0) AND (P1[aln].hole IS NULL OR P1[aln].hole != 0) THEN
                   LET P1[aln].slosshole = wk_hole
                END IF
-               IF (P1[aln].posno IS NOT NULL OR P1[aln].posno NOT MATCHES "[ ]") AND (P1[aln].hole IS NOT NULL OR P1[aln].hole NOT MATCHES "[ ]") THEN
+               IF (P1[aln].posno IS NOT NULL OR P1[aln].posno != 0) AND (P1[aln].hole IS NOT NULL OR P1[aln].hole != 0) THEN
                   LET P1[aln].slosshole = 1
                END IF
                DISPLAY P1[aln].slosshole TO SR[sln].slosshole   
@@ -557,7 +626,7 @@ FUNCTION add200(iv_option)
                THEN
                   ERROR mess[15] CLIPPED
                   NEXT FIELD rmodel
-               END IF
+               END IF 
                LET wk_cc = 0
                SELECT COUNT(UNIQUE tolno) INTO wk_cc FROM wj04
                WHERE tolno = P1[aln].rmodel
@@ -589,7 +658,7 @@ FUNCTION add200(iv_option)
                   NEXT FIELD rmodel
                END IF 
             -- check errhr field
-               IF (P1[aln].errhr IS NULL OR P1[aln].errhr MATCHES "[ ]") AND P1[aln].kind MATCHES '[F]'  THEN
+               IF (P1[aln].errhr IS NULL OR P1[aln].errhr = 0.0) AND P1[aln].kind MATCHES '[F]'  THEN
                   ERROR mess[15] CLIPPED
                   NEXT FIELD errhr
                ELSE
@@ -599,7 +668,7 @@ FUNCTION add200(iv_option)
                   END IF
                END IF
             -- check slosshole field
-               IF (P1[aln].slosshole IS NULL OR P1[aln].slosshole MATCHES "[ ]") 
+               IF (P1[aln].slosshole IS NULL OR P1[aln].slosshole = 0.0) 
                AND P1[aln].kind MATCHES '[Y]' 
                THEN
                   ERROR mess[15] CLIPPED
@@ -616,7 +685,7 @@ FUNCTION add200(iv_option)
                   WHERE codk ='615' AND mark[1] = gv_manuf
                      #1??(hole)?l??
                   LET wk_cycqty = (wk_hour * 60)/(wk_cyctime/60) #21?p??p?? 
-                  IF P1[aln].posno IS NULL OR P1[aln].posno MATCHES "[ ]" AND P1[aln].hole IS NULL OR P1[aln].hole MATCHES "[ ]" 
+                  IF P1[aln].posno IS NULL OR P1[aln].posno = 0 AND P1[aln].hole IS NULL OR P1[aln].hole = 0 
                   THEN
                      SELECT  posno, hole
                      INTO wk_posno, wk_hole
@@ -629,16 +698,16 @@ FUNCTION add200(iv_option)
                         LET P1[aln].slossprs = wk_cycqty * wk_posno * wk_hole
                      END IF	          	 
                   END IF
-                  IF (P1[aln].posno IS NOT NULL OR P1[aln].posno NOT MATCHES "[ ]") AND (P1[aln].hole IS NULL OR P1[aln].hole MATCHES "[ ]") THEN
+                  IF (P1[aln].posno IS NOT NULL OR P1[aln].posno != 0) AND (P1[aln].hole IS NULL OR P1[aln].hole = 0) THEN
                      LET P1[aln].slossprs = wk_cycqty * 2
                   END IF
-                  IF (P1[aln].posno IS NOT NULL OR P1[aln].posno NOT MATCHES "[ ]") AND (P1[aln].hole IS NOT NULL OR P1[aln].hole NOT MATCHES "[ ]") THEN
+                  IF (P1[aln].posno IS NOT NULL OR P1[aln].posno != 0) AND (P1[aln].hole IS NOT NULL OR P1[aln].hole != 0) THEN
                      LET P1[aln].slossprs = wk_cycqty
                   END IF          	
                END IF
                DISPLAY P1[aln].slosshole TO SR[sln].slosshole 
             -- check slossgw field
-               IF (P1[aln].slossgw IS NULL OR P1[aln].slossgw MATCHES "[ ]") AND P1[aln].kind MATCHES '[N]'  
+               IF (P1[aln].slossgw IS NULL OR P1[aln].slossgw = 0.0) AND P1[aln].kind MATCHES '[N]'  
                THEN
                   ERROR mess[15] CLIPPED
                   NEXT FIELD slossgw
@@ -661,9 +730,9 @@ FUNCTION add200(iv_option)
                END IF
                DISPLAY P1[aln].slossgw TO SR[sln].slossgw 
             -- check slossprs field
-               IF (P1[aln].slossprs IS NULL OR P1[aln].slossprs MATCHES "[ ]") AND P1[aln].kind MATCHES '[YNG]'  THEN
-                  ERROR mess[15] CLIPPED
-                  NEXT FIELD slossprs
+               IF (P1[aln].slossprs IS NULL OR P1[aln].slossprs = 0.0) AND P1[aln].kind MATCHES '[YNG]'  THEN
+                  ERROR mess[15] CLIPPED 
+                  NEXT FIELD slossgw
                ELSE
                   IF P1[aln].kind MATCHES '[G]' AND P1[aln].errhr < 0.0 THEN
                      ERROR mess[15] CLIPPED
@@ -716,238 +785,253 @@ FUNCTION add200(iv_option)
                DISPLAY P1[aln].slosshole TO SR[sln].slosshole ATTRIBUTE(REVERSE)
                DISPLAY P1[aln].slossprs  TO SR[sln].slossprs  ATTRIBUTE(REVERSE)
                DISPLAY P1[aln].slossgw   TO SR[sln].slossgw   ATTRIBUTE(REVERSE)
+               DISPLAY P1[aln].press   TO SR[sln].press   ATTRIBUTE(REVERSE)
             END IF
          END IF
       AFTER INPUT
          LET wk_key = FGL_LASTKEY()
          IF wk_key == FGL_KEYVAL("ACCEPT") OR wk_key == FGL_KEYVAL("ESC")
          THEN
-            IF (P1[aln].machcode IS NOT NULL OR P1[aln].machcode NOT MATCHES "[ ]")
-               OR (P1[aln].machno IS NOT NULL OR P1[aln].machno NOT MATCHES "[ ]")
-               OR (P1[aln].posno IS NOT NULL OR P1[aln].posno NOT MATCHES "[ ]")
-               OR (P1[aln].hole IS NOT NULL OR P1[aln].hole NOT MATCHES "[ ]")
-               OR (P1[aln].rmodel IS NOT NULL OR P1[aln].rmodel NOT MATCHES "[ ]")
-               OR (P1[aln].tolcls IS NOT NULL OR P1[aln].tolcls NOT MATCHES "[ ]")
-               OR (P1[aln].errhr IS NOT NULL OR P1[aln].errhr NOT MATCHES "[ ]")
-               OR (P1[aln].slosshole IS NOT NULL OR P1[aln].slosshole NOT MATCHES "[ ]")
-               OR (P1[aln].slossgw IS NOT NULL OR P1[aln].slossgw NOT MATCHES "[ ]")
-               OR (P1[aln].slossprs IS NOT NULL OR P1[aln].slossprs NOT MATCHES "[ ]")
-               OR (P1[aln].press IS NOT NULL OR P1[aln].press NOT MATCHES "[ ]")
-            THEN
-            -- check machcode field
-               IF (P1[aln].machcode IS NULL OR P1[aln].machcode MATCHES "[ ]")  THEN
-                  ERROR mess[15] SLEEP 1
-                  NEXT FIELD machcode
-               ELSE
-                  CALL checkExists(PH.manuf, PH.pitems, PH.dept, P1[aln].machcode) RETURNING P1[aln].kind
-                  IF P1[aln].kind
-                  THEN
-                     DISPLAY P1[aln].kind TO SR[sln].kind
-                  ELSE
-                     IF frmtyp = '2' THEN
-                        CALL cal_err("Kind and machcode weren't found","please try again")
-                     ELSE
-                        CALL cal_err("無異常工時計算代碼","請重新輸入")
-                     END IF
+            IF NOT iv_option1 THEN 
+               IF (P1[aln].machcode IS NOT NULL OR P1[aln].machcode NOT MATCHES "[ ]")
+                  OR (P1[aln].machno IS NOT NULL OR P1[aln].machno NOT MATCHES "[ ]")
+                  OR (P1[aln].posno IS NOT NULL OR P1[aln].posno NOT MATCHES "[ ]")
+                  OR (P1[aln].hole IS NOT NULL OR P1[aln].hole NOT MATCHES "[ ]")
+                  OR (P1[aln].rmodel IS NOT NULL OR P1[aln].rmodel NOT MATCHES "[ ]")
+                  OR (P1[aln].tolcls IS NOT NULL OR P1[aln].tolcls NOT MATCHES "[ ]")
+                  OR (P1[aln].errhr IS NOT NULL OR P1[aln].errhr NOT MATCHES "[ ]")
+                  OR (P1[aln].slosshole IS NOT NULL OR P1[aln].slosshole NOT MATCHES "[ ]")
+                  OR (P1[aln].slossgw IS NOT NULL OR P1[aln].slossgw NOT MATCHES "[ ]")
+                  OR (P1[aln].slossprs IS NOT NULL OR P1[aln].slossprs NOT MATCHES "[ ]")
+                  OR (P1[aln].press IS NOT NULL OR P1[aln].press NOT MATCHES "[ ]")
+               THEN 
+               -- check machcode field
+                  IF (P1[aln].machcode IS NULL OR P1[aln].machcode MATCHES "[ ]")  THEN
+                     ERROR mess[15] SLEEP 1
                      NEXT FIELD machcode
-                  END IF
-               END IF
-            -- check posno and hole fields
-               IF (P1[aln].posno IS NULL OR P1[aln].posno MATCHES "[ ]") AND (P1[aln].hole IS NULL OR P1[aln].hole MATCHES "[ ]")
-               THEN
-                  SELECT posno, hole INTO wk_posno, wk_hole
-                  FROM w213 
-                  WHERE manuf = PH.manuf
-                  AND pitems=PH.pitems 
-                  AND dept=PH.dept
-                  AND machcode=P1[aln].machcode
-                  IF STATUS = 0 THEN
-                     LET P1[aln].slosshole = wk_posno * wk_hole
-                  END IF	          	 
-               END IF
-               IF (P1[aln].posno IS NOT NULL OR P1[aln].posno NOT MATCHES "[ ]") AND (P1[aln].hole IS NULL OR P1[aln].hole MATCHES "[ ]") THEN
-                  LET P1[aln].slosshole = wk_hole
-               END IF
-               IF (P1[aln].posno IS NOT NULL OR P1[aln].posno NOT MATCHES "[ ]") AND (P1[aln].hole IS NOT NULL OR P1[aln].hole NOT MATCHES "[ ]") THEN
-                  LET P1[aln].slosshole = 1
-               END IF
-               DISPLAY P1[aln].slosshole TO SR[sln].slosshole   
-            -- check rmodel field
-               IF (P1[aln].rmodel IS NULL OR P1[aln].rmodel MATCHES "[ ]") AND P1[aln].kind MATCHES '[Y]' 
-               THEN
-                  ERROR mess[15] CLIPPED
-                  NEXT FIELD rmodel
-               END IF
-               LET wk_cc = 0
-               SELECT COUNT(UNIQUE tolno) INTO wk_cc FROM wj04
-               WHERE tolno = P1[aln].rmodel
-                  AND lmanuf = PH.manuf
-               IF wk_cc <= 0 THEN ERROR mess[01] CLIPPED
-                  NEXT FIELD rmodel
-               END IF
-            -- check tolcls field
-               IF (P1[aln].tolcls IS NULL OR P1[aln].tolcls MATCHES "[ ]") AND P1[aln].kind MATCHES '[Y]' THEN
-                  ERROR mess[15] CLIPPED
-                  NEXT FIELD tolcls
-               END IF
-               SELECT ROWID FROM wj03 WHERE tolcls = P1[aln].tolcls
-               IF STATUS != 0 THEN
-                  ERROR mess[20] CLIPPED
-                  NEXT FIELD tolcls
-               END IF
-               SELECT ROWID FROM wj04
-               WHERE lmanuf = PH.manuf
-               AND tolno = P1[aln].rmodel 
-               AND tolcls = P1[aln].tolcls
-
-               IF STATUS != 0 THEN
-                  IF frmtyp = '2' THEN
-                     CALL cal_err("wj04 Mold data not found","please try again")
                   ELSE
-                     CALL cal_err("wj04 無該模具資料","請重新輸入")
+                     CALL checkExists(PH.manuf, PH.pitems, PH.dept, P1[aln].machcode) RETURNING P1[aln].kind
+                     IF P1[aln].kind
+                     THEN
+                        DISPLAY P1[aln].kind TO SR[sln].kind
+                     ELSE
+                        IF frmtyp = '2' THEN
+                           CALL cal_err("Kind and machcode weren't found","please try again")
+                        ELSE
+                           CALL cal_err("無異常工時計算代碼","請重新輸入")
+                        END IF
+                        NEXT FIELD machcode
+                     END IF
                   END IF
-                  NEXT FIELD rmodel
-               END IF 
-            -- check errhr field
-               IF (P1[aln].errhr IS NULL OR P1[aln].errhr MATCHES "[ ]") AND P1[aln].kind MATCHES '[F]'  THEN
-                  ERROR mess[15] CLIPPED
-                  NEXT FIELD errhr
-               ELSE
-                  IF P1[aln].kind MATCHES '[F]' AND P1[aln].errhr < 0.0 THEN
+               -- check posno and hole fields
+                  IF (P1[aln].posno IS NULL OR P1[aln].posno = 0) AND (P1[aln].hole IS NULL OR P1[aln].hole = 0)
+                  THEN
+                     SELECT posno, hole INTO wk_posno, wk_hole
+                     FROM w213 
+                     WHERE manuf = PH.manuf
+                     AND pitems=PH.pitems 
+                     AND dept=PH.dept
+                     AND machcode=P1[aln].machcode
+                     IF STATUS = 0 THEN
+                        LET P1[aln].slosshole = wk_posno * wk_hole
+                     END IF	          	 
+                  END IF
+                  IF (P1[aln].posno IS NOT NULL OR P1[aln].posno != 0) AND (P1[aln].hole IS NULL OR P1[aln].hole != 0) THEN
+                     LET P1[aln].slosshole = wk_hole
+                  END IF
+                  IF (P1[aln].posno IS NOT NULL OR P1[aln].posno != 0) AND (P1[aln].hole IS NOT NULL OR P1[aln].hole != 0) THEN
+                     LET P1[aln].slosshole = 1
+                  END IF
+                  DISPLAY P1[aln].slosshole TO SR[sln].slosshole   
+               -- check rmodel field
+                  IF (P1[aln].rmodel IS NULL OR P1[aln].rmodel MATCHES "[ ]") AND P1[aln].kind MATCHES '[Y]' 
+                  THEN
+                     ERROR mess[15] CLIPPED
+                     NEXT FIELD rmodel
+                  END IF 
+                  LET wk_cc = 0
+                  SELECT COUNT(UNIQUE tolno) INTO wk_cc FROM wj04
+                  WHERE tolno = P1[aln].rmodel
+                     AND lmanuf = PH.manuf
+                  IF wk_cc <= 0 THEN ERROR mess[01] CLIPPED
+                     NEXT FIELD rmodel
+                  END IF
+               -- check tolcls field
+                  IF (P1[aln].tolcls IS NULL OR P1[aln].tolcls MATCHES "[ ]") AND P1[aln].kind MATCHES '[Y]' THEN
+                     ERROR mess[15] CLIPPED
+                     NEXT FIELD tolcls
+                  END IF
+                  SELECT ROWID FROM wj03 WHERE tolcls = P1[aln].tolcls
+                  IF STATUS != 0 THEN
+                     ERROR mess[20] CLIPPED
+                     NEXT FIELD tolcls
+                  END IF
+                  SELECT ROWID FROM wj04
+                  WHERE lmanuf = PH.manuf
+                  AND tolno = P1[aln].rmodel 
+                  AND tolcls = P1[aln].tolcls
+
+                  IF STATUS != 0 THEN
+                     IF frmtyp = '2' THEN
+                        CALL cal_err("wj04 Mold data not found","please try again")
+                     ELSE
+                        CALL cal_err("wj04 無該模具資料","請重新輸入")
+                     END IF
+                     NEXT FIELD rmodel
+                  END IF 
+               -- check errhr field
+                  IF (P1[aln].errhr IS NULL OR P1[aln].errhr = 0.0) AND P1[aln].kind MATCHES '[F]'  THEN
                      ERROR mess[15] CLIPPED
                      NEXT FIELD errhr
+                  ELSE
+                     IF P1[aln].kind MATCHES '[F]' AND P1[aln].errhr < 0.0 THEN
+                        ERROR mess[15] CLIPPED
+                        NEXT FIELD errhr
+                     END IF
                   END IF
-               END IF
-            -- check slosshole field
-               IF (P1[aln].slosshole IS NULL OR P1[aln].slosshole MATCHES "[ ]") 
-               AND P1[aln].kind MATCHES '[Y]' 
-               THEN
-                  ERROR mess[15] CLIPPED
-                  NEXT FIELD slosshole
-               ELSE
-               #?p??TCT
-                  SELECT AVG(cyctime) INTO wk_cyctime
-                  FROM w55 
-                  WHERE manuf = PH.manuf
-                  AND rmodel = P1[aln].rmodel AND tolcls = P1[aln].tolcls
-
-                  LET wk_hour = 0
-                  SELECT codsc INTO wk_hour FROM j02 
-                  WHERE codk ='615' AND mark[1] = gv_manuf
-                     #1??(hole)?l??
-                  LET wk_cycqty = (wk_hour * 60)/(wk_cyctime/60) #21?p??p?? 
-                  IF P1[aln].posno IS NULL OR P1[aln].posno MATCHES "[ ]" AND P1[aln].hole IS NULL OR P1[aln].hole MATCHES "[ ]" 
+               -- check slosshole field
+                  IF (P1[aln].slosshole IS NULL OR P1[aln].slosshole = 0.0) 
+                  AND P1[aln].kind MATCHES '[Y]' 
                   THEN
-                     SELECT  posno, hole
-                     INTO wk_posno, wk_hole
+                     ERROR mess[15] CLIPPED
+                     NEXT FIELD slosshole
+                  ELSE
+                  #?p??TCT
+                     SELECT AVG(cyctime) INTO wk_cyctime
+                     FROM w55 
+                     WHERE manuf = PH.manuf
+                     AND rmodel = P1[aln].rmodel AND tolcls = P1[aln].tolcls
+
+                     LET wk_hour = 0
+                     SELECT codsc INTO wk_hour FROM j02 
+                     WHERE codk ='615' AND mark[1] = gv_manuf
+                        #1??(hole)?l??
+                     LET wk_cycqty = (wk_hour * 60)/(wk_cyctime/60) #21?p??p?? 
+                     IF P1[aln].posno IS NULL OR P1[aln].posno = 0 AND P1[aln].hole IS NULL OR P1[aln].hole = 0 
+                     THEN
+                        SELECT  posno, hole
+                        INTO wk_posno, wk_hole
+                        FROM w213 
+                        WHERE manuf = PH.manuf 
+                        AND pitems = PH.pitems 
+                        AND dept = PH.dept 
+                        AND machcode = P1[aln].machcode
+                        IF STATUS = 0 THEN
+                           LET P1[aln].slossprs = wk_cycqty * wk_posno * wk_hole
+                        END IF	          	 
+                     END IF
+                     IF (P1[aln].posno IS NOT NULL OR P1[aln].posno != 0) AND (P1[aln].hole IS NULL OR P1[aln].hole = 0) THEN
+                        LET P1[aln].slossprs = wk_cycqty * 2
+                     END IF
+                     IF (P1[aln].posno IS NOT NULL OR P1[aln].posno != 0) AND (P1[aln].hole IS NOT NULL OR P1[aln].hole != 0) THEN
+                        LET P1[aln].slossprs = wk_cycqty
+                     END IF          	
+                  END IF
+                  DISPLAY P1[aln].slosshole TO SR[sln].slosshole 
+               -- check slossgw field
+                  IF (P1[aln].slossgw IS NULL OR P1[aln].slossgw = 0.0) AND P1[aln].kind MATCHES '[N]'  
+                  THEN
+                     ERROR mess[15] CLIPPED
+                     NEXT FIELD slossgw
+                  ELSE
+                     IF P1[aln].kind MATCHES '[N]' AND P1[aln].slossgw < 0.0 
+                     THEN
+                        ERROR mess[15] CLIPPED
+                        NEXT FIELD slossgw         	  
+                     END IF
+                     SELECT  posno, hole, lossprs, losshr, lossgw
+                     INTO wk_posno, wk_hole, wk_lossprs, wk_losshr, wk_lossgw
                      FROM w213 
-                     WHERE manuf = PH.manuf 
+                     WHERE manuf = PH.manuf  
                      AND pitems = PH.pitems 
                      AND dept = PH.dept 
                      AND machcode = P1[aln].machcode
                      IF STATUS = 0 THEN
-                        LET P1[aln].slossprs = wk_cycqty * wk_posno * wk_hole
-                     END IF	          	 
+                        LET P1[aln].slossprs = P1[aln].slossgw/wk_lossgw
+                     END IF	   
                   END IF
-                  IF (P1[aln].posno IS NOT NULL OR P1[aln].posno NOT MATCHES "[ ]") AND (P1[aln].hole IS NULL OR P1[aln].hole MATCHES "[ ]") THEN
-                     LET P1[aln].slossprs = wk_cycqty * 2
+                  DISPLAY P1[aln].slossgw TO SR[sln].slossgw 
+               -- check slossprs field
+                  IF (P1[aln].slossprs IS NULL OR P1[aln].slossprs = 0.0) AND P1[aln].kind MATCHES '[YNG]'  THEN
+                     ERROR mess[15] CLIPPED 
+                     NEXT FIELD slossgw
+                  ELSE
+                     IF P1[aln].kind MATCHES '[G]' AND P1[aln].errhr < 0.0 THEN
+                        ERROR mess[15] CLIPPED
+                        NEXT FIELD errhr
+                     END IF
+                     SELECT  posno, hole, lossprs, losshr, lossgw
+                     INTO wk_posno, wk_hole, wk_lossprs, wk_losshr, wk_lossgw
+                     FROM w213 
+                     WHERE manuf = PH.manuf  
+                     AND pitems = PH.pitems 
+                     AND dept = PH.dept 
+                     AND machcode = P1[aln].machcode
+                     IF STATUS = 0 THEN
+                        LET P1[aln].slossprs = P1[aln].errhr * wk_lossprs
+                     END IF 
                   END IF
-                  IF (P1[aln].posno IS NOT NULL OR P1[aln].posno NOT MATCHES "[ ]") AND (P1[aln].hole IS NOT NULL OR P1[aln].hole NOT MATCHES "[ ]") THEN
-                     LET P1[aln].slossprs = wk_cycqty
-                  END IF          	
-               END IF
-               DISPLAY P1[aln].slosshole TO SR[sln].slosshole 
-            -- check slossgw field
-               IF (P1[aln].slossgw IS NULL OR P1[aln].slossgw MATCHES "[ ]") AND P1[aln].kind MATCHES '[N]'  
-               THEN
-                  ERROR mess[15] CLIPPED
-                  NEXT FIELD slossgw
-               ELSE
+                  DISPLAY P1[aln].slossprs TO SR[sln].slossprs 
+               -- check press field
+                  IF (P1[aln].press IS NOT NULL OR P1[aln].press NOT MATCHES "[ ]") AND P1[aln].press NOT MATCHES "[YN]" THEN
+                     NEXT FIELD press
+                  END IF
+
+                  IF P1[aln].errhr     IS NULL THEN LET P1[aln].errhr     = 0   END IF
+                  IF P1[aln].slosshole IS NULL THEN LET P1[aln].slosshole = 0   END IF
+                  IF P1[aln].slossgw   IS NULL THEN LET P1[aln].slossgw   = 0.0 END IF
+                  IF P1[aln].slossprs  IS NULL THEN LET P1[aln].slossprs  = 0.0 END IF
+                  IF P1[aln].press     IS NULL THEN LET P1[aln].press     = 'N' END IF
+                  
+                  IF P1[aln].kind MATCHES '[Y]' AND P1[aln].slosshole < 0.0 
+                  THEN
+                     NEXT FIELD slosshole
+                  END IF
+                  IF P1[aln].kind MATCHES '[F]' AND P1[aln].errhr < 0 
+                  THEN
+                     NEXT FIELD errhr
+                  END IF                   
                   IF P1[aln].kind MATCHES '[N]' AND P1[aln].slossgw < 0.0 
                   THEN
-                     ERROR mess[15] CLIPPED
-                     NEXT FIELD slossgw         	  
-                  END IF
-                  SELECT  posno, hole, lossprs, losshr, lossgw
-                  INTO wk_posno, wk_hole, wk_lossprs, wk_losshr, wk_lossgw
-                  FROM w213 
-                  WHERE manuf = PH.manuf  
-                  AND pitems = PH.pitems 
-                  AND dept = PH.dept 
-                  AND machcode = P1[aln].machcode
-                  IF STATUS = 0 THEN
-                     LET P1[aln].slossprs = P1[aln].slossgw/wk_lossgw
-                  END IF	   
-               END IF
-               DISPLAY P1[aln].slossgw TO SR[sln].slossgw 
-            -- check slossprs field
-               IF (P1[aln].slossprs IS NULL OR P1[aln].slossprs MATCHES "[ ]") AND P1[aln].kind MATCHES '[YNG]'  THEN
-                  ERROR mess[15] CLIPPED
-                  NEXT FIELD slossprs
-               ELSE
-                  IF P1[aln].kind MATCHES '[G]' AND P1[aln].errhr < 0.0 THEN
-                     ERROR mess[15] CLIPPED
-                     NEXT FIELD errhr
-                  END IF
-                  SELECT  posno, hole, lossprs, losshr, lossgw
-                  INTO wk_posno, wk_hole, wk_lossprs, wk_losshr, wk_lossgw
-                  FROM w213 
-                  WHERE manuf = PH.manuf  
-                  AND pitems = PH.pitems 
-                  AND dept = PH.dept 
-                  AND machcode = P1[aln].machcode
-                  IF STATUS = 0 THEN
-                     LET P1[aln].slossprs = P1[aln].errhr * wk_lossprs
+                     NEXT FIELD slossgw
                   END IF 
+                  IF P1[aln].kind MATCHES '[G]' AND P1[aln].errhr < 0 
+                  THEN
+                     NEXT FIELD errhr
+                  END IF 
+                  IF P1[aln].kind MATCHES '[YNG]' AND P1[aln].slossprs < 0.0 
+                  THEN
+                     NEXT FIELD slossprs
+                  END IF
+                  DISPLAY P1[aln].errhr     TO SR[sln].errhr     ATTRIBUTE(REVERSE)
+                  DISPLAY P1[aln].slosshole TO SR[sln].slosshole ATTRIBUTE(REVERSE)
+                  DISPLAY P1[aln].slossprs  TO SR[sln].slossprs  ATTRIBUTE(REVERSE)
+                  DISPLAY P1[aln].slossgw   TO SR[sln].slossgw   ATTRIBUTE(REVERSE)
+                  DISPLAY P1[aln].press   TO SR[sln].press   ATTRIBUTE(REVERSE)
                END IF
-               DISPLAY P1[aln].slossprs TO SR[sln].slossprs 
-            -- check press field
-               IF (P1[aln].press IS NOT NULL OR P1[aln].press NOT MATCHES "[ ]") AND P1[aln].press NOT MATCHES "[YN]" THEN
-                  NEXT FIELD press
-               END IF
-               IF P1[aln].errhr     IS NULL THEN LET P1[aln].errhr     = 0   END IF
-               IF P1[aln].slosshole IS NULL THEN LET P1[aln].slosshole = 0   END IF
-               IF P1[aln].slossgw   IS NULL THEN LET P1[aln].slossgw   = 0.0 END IF
-               IF P1[aln].slossprs  IS NULL THEN LET P1[aln].slossprs  = 0.0 END IF
-               IF P1[aln].press     IS NULL THEN LET P1[aln].press     = 'N' END IF
-               
-               IF P1[aln].kind MATCHES '[Y]' AND P1[aln].slosshole < 0.0 
-               THEN
-                  NEXT FIELD slosshole
-               END IF
-               IF P1[aln].kind MATCHES '[F]' AND P1[aln].errhr < 0 
-               THEN
-                  NEXT FIELD errhr
-               END IF                   
-               IF P1[aln].kind MATCHES '[N]' AND P1[aln].slossgw < 0.0 
-               THEN
-                  NEXT FIELD slossgw
-               END IF 
-               IF P1[aln].kind MATCHES '[G]' AND P1[aln].errhr < 0 
-               THEN
-                  NEXT FIELD errhr
-               END IF 
-               IF P1[aln].kind MATCHES '[YNG]' AND P1[aln].slossprs < 0.0 
-               THEN
-                  NEXT FIELD slossprs
-               END IF
-               DISPLAY P1[aln].errhr     TO SR[sln].errhr     ATTRIBUTE(REVERSE)
-               DISPLAY P1[aln].slosshole TO SR[sln].slosshole ATTRIBUTE(REVERSE)
-               DISPLAY P1[aln].slossprs  TO SR[sln].slossprs  ATTRIBUTE(REVERSE)
-               DISPLAY P1[aln].slossgw   TO SR[sln].slossgw   ATTRIBUTE(REVERSE)
             END IF
          ELSE
-            PROMPT "Do you really want to cancle input (y/Y for Yes, another for No)? " FOR wk_prompt
+            IF iv_option1 THEN
+               PROMPT "Do you really want to cancle (y/Y for Yes, another for No)? " FOR wk_prompt
+            ELSE
+               PROMPT "Do you really want to cancle input (y/Y for Yes, another for No)? " FOR wk_prompt
+            END IF
             IF wk_prompt NOT MATCHES "[yY]"
             THEN
                CONTINUE INPUT
+            ELSE
+               IF iv_option1
+               THEN
+                  IF wk_recordDel THEN
+                     ERROR mess[53] CLIPPED, wk_recordDel USING "<<< & ",mess[41] CLIPPED
+                  END IF
+               END IF
             END IF
          END IF
    END INPUT
 END FUNCTION
 #-------------------------------------------------------------------
 FUNCTION addfun()
-   DEFINE wk_count, wk_count1 INTEGER
    DEFINE wk_incorrect INTEGER
    DEFINE wk_countAddSuccess INTEGER
    DEFINE wk_errno LIKE w214.errno
@@ -974,7 +1058,7 @@ FUNCTION addfun()
    END IF
    ------
    CALL SET_COUNT(max_ary)
-   CALL add200(FALSE)
+   CALL add200(FALSE, FALSE)
    IF INT_FLAG THEN
       LET INT_FLAG = FALSE
       CLEAR FORM
@@ -983,58 +1067,49 @@ FUNCTION addfun()
    END IF
    ------
    ERROR mess[11] # proccessing...
-   LET wk_count = 0
-   LET wk_count1 = 1
-   SELECT COUNT(*) INTO wk_count FROM w214
-   WHERE manuf = PH.manuf AND pitems = PH.pitems AND errdat = PH.errdat AND errno = PH.errno
-   SELECT COUNT(*) INTO wk_count1 FROM w215
-   WHERE errno = PH.errno
+   BEGIN WORK
+      FOR cc = 1 TO max_ary 
+         IF P1[cc].machcode IS NULL OR P1[cc].machcode MATCHES "[ ]" THEN CONTINUE FOR END IF
+         -- check data incorrect
+         SELECT ROWID FROM wj03 WHERE tolcls = P1[cc].tolcls
+         IF STATUS != 0 THEN
+            LET  wk_incorrect = wk_incorrect + 1
+            CONTINUE FOR
+         END IF
 
-   IF wk_count OR wk_count1 THEN
-      ERROR mess[2] CLIPPED, mess[52] CLIPPED, "!" 
-      RETURN
-   ELSE
-      BEGIN WORK
-         FOR cc = 1 TO max_ary 
-            IF P1[cc].machcode IS NULL OR P1[cc].machcode MATCHES "[ ]" THEN CONTINUE FOR END IF
-            -- check data incorrect
-            SELECT ROWID FROM wj03 WHERE tolcls = P1[cc].tolcls
-            IF STATUS != 0 THEN
-               LET  wk_incorrect = wk_incorrect + 1
-               CONTINUE FOR
-            END IF
-
-            SELECT ROWID FROM wj04
-            WHERE lmanuf = PH.manuf
-            AND tolno = P1[cc].rmodel 
-            AND tolcls = P1[cc].tolcls
-            IF STATUS != 0 THEN
-               LET  wk_incorrect = wk_incorrect + 1
-               CONTINUE FOR
-            END IF 
-         
-            IF P1[cc].press NOT MATCHES "[YN]" THEN LET P1[cc].press = "N" END IF
-            --
-            LET wk_errno = get_no("R", PH.dept)
-            INSERT INTO w214 
-            VALUES (PH.manuf, PH.errno, PH.errdat, PH.pitems, PH.dept, PH.code, PH.remark,login_usr, CURRENT YEAR TO SECOND)
-            IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
-               ROLLBACK WORK
-               ERROR mess[04] CLIPPED
-               RETURN
-            END IF
-            
-            INSERT INTO w215 
-            VALUES (wk_errno, P1[cc].kind, P1[cc].machcode, P1[cc].machno, P1[cc].posno, P1[cc].hole, P1[cc].rmodel, P1[cc].tolcls, P1[cc].errhr, P1[cc].slosshole, P1[cc].slossgw, P1[cc].slossprs, P1[cc].press, login_usr, CURRENT YEAR TO SECOND)
-            IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
-               ROLLBACK WORK
-               ERROR mess[04] CLIPPED
-               RETURN
-            END IF
-            LET wk_countAddSuccess = wk_countAddSuccess + 1
-         END FOR
-      COMMIT WORK
-   END IF
+         SELECT ROWID FROM wj04
+         WHERE lmanuf = PH.manuf
+         AND tolno = P1[cc].rmodel 
+         AND tolcls = P1[cc].tolcls
+         IF STATUS != 0 THEN
+            LET  wk_incorrect = wk_incorrect + 1
+            CONTINUE FOR
+         END IF 
+   
+         --
+         LET wk_errno = get_no("R", PH.dept)
+         INSERT INTO w214 
+         VALUES (PH.manuf, wk_errno, PH.errdat, PH.pitems, PH.dept, PH.code, PH.remark,login_usr, CURRENT YEAR TO SECOND)
+         IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
+            ROLLBACK WORK
+            ERROR mess[04] CLIPPED
+            RETURN
+         END IF
+         IF P1[aln].errhr     IS NULL THEN LET P1[aln].errhr     = 0   END IF
+         IF P1[aln].slosshole IS NULL THEN LET P1[aln].slosshole = 0   END IF
+         IF P1[aln].slossgw   IS NULL THEN LET P1[aln].slossgw   = 0.0 END IF
+         IF P1[aln].slossprs  IS NULL THEN LET P1[aln].slossprs  = 0.0 END IF
+         IF P1[aln].press     IS NULL OR P1[cc].press NOT MATCHES "[YN]" THEN LET P1[aln].press     = 'N' END IF
+         INSERT INTO w215 
+         VALUES (wk_errno, P1[cc].kind, P1[cc].machcode, P1[cc].machno, P1[cc].posno, P1[cc].hole, P1[cc].rmodel, P1[cc].tolcls, P1[cc].errhr, P1[cc].slosshole, P1[cc].slossgw, P1[cc].slossprs, P1[cc].press, login_usr, CURRENT YEAR TO SECOND)
+         IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
+            ROLLBACK WORK
+            ERROR mess[04] CLIPPED
+            RETURN
+         END IF
+         LET wk_countAddSuccess = wk_countAddSuccess + 1
+      END FOR
+   COMMIT WORK
    
    IF wk_countAddSuccess > 0 
    THEN
@@ -1059,11 +1134,12 @@ FUNCTION updfun()
    DEFINE wk_incorrect INTEGER
    DEFINE wk_countUpdateSuccess INTEGER
    DEFINE wk_flagContent, wk_flagHead SMALLINT
+   DEFINE wk_countDel INTEGER
 
    DISPLAY "" AT 23, 1
-   DISPLAY "" AT 22, 1
 
    LET wk_countUpdateSuccess = 0
+   LET wk_countDel = 0
 
    IF op_code = 'N' THEN
       ERROR mess[16] CLIPPED
@@ -1073,6 +1149,7 @@ FUNCTION updfun()
       ERROR mess[10] CLIPPED
       RETURN
    END IF
+   DISPLAY "If you prompt the row is empty, this row will be removed!" AT 22, 1
    OPTIONS INSERT KEY F13,
          DELETE KEY F14
 
@@ -1085,7 +1162,7 @@ FUNCTION updfun()
 
    CALL SET_COUNT(cc)
 
-   CALL add200(TRUE)
+   CALL add200(TRUE, FALSE)
    IF INT_FLAG THEN
       LET INT_FLAG = FALSE
       ERROR mess[07] CLIPPED
@@ -1093,29 +1170,53 @@ FUNCTION updfun()
    END IF
 
    BEGIN WORK
-   IF PH1.pitems != PH.pitems OR PH1.dept != PH.dept OR PH1.code != PH.code OR PH1.errdat != PH.errdat OR PH1.remark != PH.remark
-   THEN
-      UPDATE w214 
-      SET (errdat, pitems, dept, code, remark, upusr, upday)
-      = (PH.errdat, PH.pitems, PH.dept, PH.code, PH.remark,login_usr, CURRENT YEAR TO SECOND)
-      WHERE ROWID = Wrowid[cc1]
-      IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
-         ROLLBACK WORK
-         ERROR mess[04] CLIPPED
-         RETURN
-      END IF
-      LET wk_flagHead = TRUE 
-   END IF
+
    FOR cc1 = 1 TO max_ary
+      IF P2[cc1].machcode IS NULL
+      THEN 
+         CONTINUE FOR 
+      ELSE
+       -- remove empty row
+         IF (P1[cc1].machcode IS NULL OR P1[cc1].machcode MATCHES "[ ]")
+            AND (P1[cc1].machno IS NULL OR P1[cc1].machno MATCHES "[ ]")
+            AND (P1[cc1].posno IS NULL OR P1[cc1].posno MATCHES "[ ]" OR P1[cc1].posno = 0)
+            AND (P1[cc1].hole IS NULL OR P1[cc1].hole MATCHES "[ ]"  OR P1[cc1].hole = 0)
+            AND (P1[cc1].rmodel IS NULL OR P1[cc1].rmodel MATCHES "[ ]")
+            AND (P1[cc1].tolcls IS NULL OR P1[cc1].tolcls MATCHES "[ ]")
+            AND (P1[cc1].errhr IS NULL OR P1[cc1].errhr MATCHES "[ ]"  OR P1[cc1].errhr = 0.0)
+            AND (P1[cc1].slosshole IS NULL OR P1[cc1].slosshole MATCHES "[ ]" OR P1[cc1].slosshole = 0)
+            AND (P1[cc1].slossgw IS NULL OR P1[cc1].slossgw MATCHES "[ ]"  OR P1[cc1].slossgw = 0.0)
+            AND (P1[cc1].slossprs IS NULL OR P1[cc1].slossprs MATCHES "[ ]" OR P1[cc1].slosshole = 0.0)
+            AND (P1[cc1].press IS NULL OR P1[cc1].press MATCHES "[ ]")
+         THEN
+            DELETE FROM w214 WHERE ROWID = Wrowid[cc1]
+            DELETE FROM w215 WHERE ROWID = Wrowid[cc1]
+            LET wk_countDel = wk_countDel + 1
+         END IF
+      -- 
+      END IF
       LET wk_flagContent = FALSE
-      IF P1[cc1].machcode IS NULL OR P1[cc1].machcode MATCHES "[ ]" THEN CONTINUE FOR END IF
+
+      IF PH1.pitems != PH.pitems OR PH1.dept != PH.dept OR PH1.code != PH.code OR PH1.errdat != PH.errdat OR (PH1.remark IS NULL AND (PH.remark IS NOT NULL OR PH.remark NOT MATCHES "[ ]") OR ((PH1.remark IS NOT NULL OR PH1.remark NOT MATCHES "[ ]") AND PH1.remark != PH.remark) OR ((PH1.remark IS NOT NULL OR PH1.remark NOT MATCHES "[ ]") AND (PH.remark IS NULL OR PH.remark MATCHES "[ ]")))
+      THEN 
+         UPDATE w214 
+         SET (errdat, pitems, dept, code, remark, upusr, upday)
+         = (PH.errdat, PH.pitems, PH.dept, PH.code, PH.remark,login_usr, CURRENT YEAR TO SECOND)
+         WHERE ROWID = Wrowid[cc1]
+         IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
+            ROLLBACK WORK
+            ERROR mess[04] CLIPPED
+            RETURN
+         END IF
+         LET wk_flagHead = TRUE  
+      END IF
       IF P2[cc1].machcode != P1[cc1].machcode OR P2[cc1].posno != P1[cc1].posno OR P2[cc1].machno != P1[cc1].machno OR P2[cc1].hole != P1[cc1].hole OR P2[cc1].rmodel != P1[cc1].rmodel OR P2[cc1].tolcls != P1[cc1].tolcls OR P2[cc1].errhr != P1[cc1].errhr OR P2[cc1].slosshole != P1[cc1].slosshole OR P2[cc1].slossgw != P1[cc1].slossgw OR P2[cc1].slossprs != P1[cc1].slossprs OR P2[cc1].press != P1[cc1].press
          THEN
             -- check data incorrect
             SELECT ROWID FROM wj03 WHERE tolcls = P1[cc1].tolcls
             IF STATUS != 0 THEN
                LET  wk_incorrect = wk_incorrect + 1
-               CONTINUE FOR
+               CONTINUE FOR 
             END IF
 
             SELECT ROWID FROM wj04 
@@ -1148,9 +1249,17 @@ FUNCTION updfun()
    IF wk_countUpdateSuccess > 0 THEN
       IF wk_incorrect
       THEN
-         ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success!", " To be incorrected ", wk_incorrect USING "<<<<< & record."  SLEEP 1
+         IF wk_countDel > 0 THEN
+            ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success!", " To be incorrected ", wk_incorrect USING "<<<<< & record and removed ", wk_countDel USING "<<<<<& empty record."  SLEEP 1
+         ELSE
+            ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success!", " To be incorrected ", wk_incorrect USING "<<<<< & record."  SLEEP 1
+         END IF
       ELSE
-         ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success!"  SLEEP 1
+         IF wk_countDel > 0 THEN
+            ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success! To be removed ", wk_countDel USING "<<<<<& empty record."  SLEEP 1
+         ELSE
+            ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success!"  SLEEP 1
+         END IF
       END IF   
       CALL inqfun(FALSE) 
    ELSE
@@ -1158,16 +1267,31 @@ FUNCTION updfun()
       THEN
          IF wk_flagHead
          THEN
-            ERROR "Some datas are changed! To be incorrected ", wk_incorrect USING "<<<<< & record."  SLEEP 1
+            IF wk_countDel > 0 THEN
+               ERROR "Some datas are changed! To be incorrected ", wk_incorrect USING "<<<<<& record and removed ", wk_countDel USING "<<<<<& empty record."  SLEEP 1
+            ELSE
+               ERROR "Some datas are changed! To be incorrected ", wk_incorrect USING "<<<<<& record."  SLEEP 1
+            END IF
          ELSE
             ERROR "Datas are changed! To be incorrected ", wk_incorrect USING "<<<<< & record."  SLEEP 1
          END IF
+         CALL inqfun(FALSE) 
       ELSE
          IF wk_flagHead
-         THEN
-            ERROR "Some datas are changed!" SLEEP 1
+         THEN 
+            IF wk_countDel > 0 THEN  
+               ERROR "Some datas are changed! To be removed ", wk_countDel USING "<<<<<& empty record."  SLEEP 1
+            ELSE
+               ERROR "Some datas are changed!" SLEEP 1
+            END IF
+            CALL inqfun(FALSE) 
          ELSE
-            ERROR "Datas are unchanged!" SLEEP 1
+            IF wk_countDel > 0 THEN  
+               ERROR "Datas are unchanged! To be removed ", wk_countDel USING "<<<<<& empty record."  SLEEP 1
+               CALL inqfun(FALSE) 
+            ELSE
+               ERROR "Datas are unchanged!" SLEEP 1
+            END IF
          END IF
       END IF
    END IF
@@ -1185,32 +1309,36 @@ FUNCTION delfun()
       ERROR mess[10] CLIPPED
       RETURN
    END IF
-   CALL ans() RETURNING ans1
-   IF ans1 MATCHES "[^Yy]" THEN
-      ERROR mess[8]
-      RETURN
-   END IF
-   LET cnt1 = 0
-   BEGIN WORK
-      FOR cc1 = 1 TO cc
-         DELETE FROM w215 WHERE ROWID = Wrowid[cc1]
-         IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
-            ERROR mess[63] CLIPPED
-            ROLLBACK WORK
-            RETURN
-         ELSE
-            DELETE FROM w214 WHERE manuf = PH.manuf AND pitems = PH.pitems AND errdat = PH.errdat AND errno = PH.errno
-            IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
-               ERROR mess[63] CLIPPED
-               ROLLBACK WORK
-               RETURN
-            END IF
-            LET cnt1 = cnt1 + 1
-         END IF
-      END FOR
-   COMMIT WORK
-   ERROR mess[53] CLIPPED, cnt1 USING "<<< & ",mess[41] CLIPPED
-   CALL reopen()
+   CALL SET_COUNT(cc)
+
+   CALL add200(TRUE, FALSE)
+
+   -- CALL ans() RETURNING ans1
+   -- IF ans1 MATCHES "[^Yy]" THEN
+   --    ERROR mess[8]
+   --    RETURN
+   -- -- END IF
+   -- LET cnt1 = 0
+   -- BEGIN WORK
+   --    FOR cc1 = 1 TO cc
+   --       DELETE FROM w215 WHERE ROWID = Wrowid[cc1]
+   --       IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
+   --          ERROR mess[63] CLIPPED
+   --          ROLLBACK WORK
+   --          RETURN
+   --       ELSE
+   --          DELETE FROM w214 WHERE errno = P_errno[cc1].errno
+   --          IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
+   --             ERROR mess[63] CLIPPED
+   --             ROLLBACK WORK
+   --             RETURN
+   --          END IF
+   --          LET cnt1 = cnt1 + 1
+   --       END IF
+   --    END FOR
+   -- COMMIT WORK
+   -- ERROR mess[53] CLIPPED, cnt1 USING "<<< & ",mess[41] CLIPPED
+   -- CALL reopen()
 END FUNCTION
 #----------------------------------------------------------------------
 FUNCTION pgfun(move)
@@ -1316,10 +1444,10 @@ FUNCTION disfun()
    DISPLAY "" AT 1, 1
    DISPLAY "" AT 2, 1
    DISPLAY "" AT 23, 1
-   DISPLAY "" AT 22, 1
+   
 
    DISPLAY mess[29] CLIPPED,mess[32] CLIPPED AT 1, 1
-
+   DISPLAY "Press CONTROL-Z to see errno field value." AT 22, 1
    LET cc = 1
    CALL openCursorStd()
    WHILE TRUE
@@ -1339,7 +1467,7 @@ FUNCTION disfun()
                     max_ary USING "<<<#"," 筆" AT 1, 1
             DISPLAY "共 ",cc USING "<<<#"," 筆 " AT 23, 1
             DISPLAY ARRAY P1 TO SR.*
-               ON KEY(UP, DOWN)
+               ON KEY (CONTROL-Z)
                   LET aln = ARR_CURR()
                   DISPLAY BY NAME P_errno[aln].*
             END DISPLAY
@@ -1385,7 +1513,7 @@ FUNCTION disfun()
       DISPLAY "Total ",cc USING "<<<#"," row " AT 23, 1
    END IF   	   
    DISPLAY ARRAY P1 TO SR.*
-      ON KEY(UP, DOWN)
+      ON KEY (CONTROL-Z)
          LET aln = ARR_CURR()
          DISPLAY BY NAME P_errno[aln].*
    END DISPLAY
@@ -1593,7 +1721,26 @@ FUNCTION openCursorStd()
    THEN
       CLOSE std_curs
    END IF
-   OPEN std_curs USING PH.manuf, PH.pitems, PH.dept, PH.errdat, PH.code, PH.remark
+   IF wk_flag AND wk_flag1
+   THEN
+      OPEN std_curs USING PH.manuf, PH.pitems, PH.dept, PH.errdat, PH.code, PH.errno, PH.remark
+   END IF
+
+   IF wk_flag AND NOT wk_flag1
+   THEN
+      OPEN std_curs USING PH.manuf, PH.pitems, PH.dept, PH.errdat, PH.code, PH.errno
+   END IF
+   
+   IF NOT wk_flag AND wk_flag1
+   THEN
+      OPEN std_curs USING PH.manuf, PH.pitems, PH.dept, PH.errdat, PH.code, PH.remark
+   END IF
+
+   IF NOT wk_flag AND NOT wk_flag1
+   THEN
+      OPEN std_curs USING PH.manuf, PH.pitems, PH.dept, PH.errdat, PH.code
+   END IF
+
    LET wk_flagOpenCur2 = TRUE
 END FUNCTION
 
@@ -1618,7 +1765,7 @@ FUNCTION get_no(iv_flag, iv_dept)
    FROM w214
    WHERE errno MATCHES iv_num6
 
-   IF iv_number IS NULL THEN LET iv_number=' ' END IF
+   IF iv_number IS NULL THEN LET iv_number=' ' END IF 
    IF iv_number>' 0' THEN
       LET wk_yy=YEAR(TODAY)-2000
       LET wk_mm=MONTH(TODAY)
