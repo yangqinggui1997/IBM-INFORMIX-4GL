@@ -77,39 +77,39 @@ FUNCTION mainfun()
          COMMAND "1.新增"
                "說明:   新增資料, 按 Esc 執行, Del 放棄, Ctrl-P 基本操作說明"
                   HELP 0001 IF( usr_pg[1] = 'N' )THEN ERROR mess[25] CLIPPED
-                  ELSE CALL Cset_int() CALL curfun() CALL addfun()
+                  ELSE CALL Cset_int() CALL curfun() CALL clearLine() CALL addfun()
                   END IF
          COMMAND "2.查詢"
                   "說明:   查詢資料, 按 Esc 執行, Del 放棄, Ctrl-P 基本操作說明"
                   HELP 0001 IF( usr_pg[2] = 'N' )THEN ERROR mess[25] CLIPPED
-                  ELSE CALL Cset_int() CALL inqfun(TRUE)
+                  ELSE CALL Cset_int() CALL clearLine() CALL inqfun(TRUE)
                   END IF
          COMMAND "3.修改"
                   "說明:   修改資料, 按 Esc 執行, Del 放棄, Ctrl-P 基本操作說明"
                   HELP 0001 IF( usr_pg[3] = 'N' )THEN ERROR mess[25] CLIPPED
-                  ELSE CALL Cset_int() CALL updfun()
+                  ELSE CALL Cset_int() CALL clearLine() CALL updfun()
                   END IF
          COMMAND "4.刪除"
                   "說明:   刪除此張資料, 按 Y 執行, Del 放棄, Ctrl-P 基本操作說明"
                   HELP 0001 IF( usr_pg[4] = 'N' )THEN ERROR mess[25] CLIPPED
-                  ELSE CALL Cset_int() CALL delfun()
+                  ELSE CALL Cset_int() CALL clearLine() CALL delfun()
                   END IF
          COMMAND "5.明細查詢" "說明:   查詢目前所顯示之明細資料, Ctrl-P 基本操作說明"
                   HELP 0001 IF( usr_pg[2] = 'N' )THEN ERROR mess[25] CLIPPED
-                  ELSE CALL Cset_int() CALL disfun()
+                  ELSE CALL Cset_int() CALL clearLine() CALL disfun()
                   END IF
          COMMAND "N.下張" "說明:   顯示下一張資料, Ctrl-P 基本操作說明"
                   HELP 0001 IF( usr_pg[2] = 'N' )THEN ERROR mess[25] CLIPPED
-                  ELSE CALL Cset_int() CALL pgfun(TRUE)
+                  ELSE CALL Cset_int() CALL clearLine() CALL pgfun(TRUE)
                   END IF
          COMMAND "U.上張" "說明:   顯示上一張資料, Ctrl-P 基本操作說明"
                   HELP 0001 IF( usr_pg[2] = 'N' )THEN ERROR mess[25] CLIPPED
-                  ELSE CALL Cset_int() CALL pgfun(FALSE)
+                  ELSE CALL Cset_int() CALL clearLine() CALL pgfun(FALSE)
                   END IF
          COMMAND "7.輸入清單"
                   "說明:   修改資料, 按 Esc 執行, Del 放棄, Ctrl-P 基本操作說明"
                   HELP 0001 IF( usr_pg[2] = 'N' )THEN ERROR mess[25] CLIPPED
-                  ELSE CALL Cset_int() CALL prtfun()
+                  ELSE CALL Cset_int() CALL clearLine() CALL prtfun()
                   END IF
          COMMAND "H.說明" "說明:   程式操作輔助說明"
                CALL showhelp(0114)
@@ -121,36 +121,36 @@ FUNCTION mainfun()
                EXIT MENU
       COMMAND "1.CREATE" "HELP:   Create data, Esc to run, Del to abort, Ctrl-P Basic help"
                HELP 0001 IF( usr_pg[1] = 'N' )THEN ERROR mess[25] CLIPPED
-               ELSE CALL Cset_int() CALL curfun() CALL addfun()
+               ELSE CALL Cset_int() CALL curfun() CALL clearLine() CALL addfun()
                END IF
       COMMAND "2.INQUIRE" "HELP:   Inquire data, Esc to run, Del to abort, Ctrl-P Basic help"
                 HELP 0001 IF( usr_pg[2] = 'N' )THEN ERROR mess[25] CLIPPED
-                ELSE CALL Cset_int() CALL inqfun(TRUE)
+                ELSE CALL Cset_int() CALL clearLine() CALL inqfun(TRUE)
                 END IF
       COMMAND "3.UPDATE" "HELP:   UPDATE data, Esc to run, Del to abort, Ctrl-P Basic help"
                 HELP 0001 IF( usr_pg[3] = 'N' )THEN ERROR mess[25] CLIPPED
-                ELSE CALL Cset_int() CALL updfun()
+                ELSE CALL Cset_int() CALL clearLine() CALL updfun()
                 END IF
       COMMAND "4.DELETE" "HELP:   Delete data, Esc to run, Del to abort, Ctrl-P Basic help"
                 HELP 0001 IF( usr_pg[4] = 'N' )THEN ERROR mess[25] CLIPPED
-                ELSE CALL Cset_int() CALL delfun()
+                ELSE CALL Cset_int() CALL clearLine() CALL delfun()
                 END IF
       COMMAND "5.DETAIL QUERY" "HELP:   Display detail Data, Ctrl-P Basic help"
                 HELP 0001 IF( usr_pg[2] = 'N' )THEN ERROR mess[25] CLIPPED
-                ELSE CALL Cset_int() CALL disfun()
+                ELSE CALL Cset_int() CALL clearLine() CALL disfun()
                 END IF
       COMMAND "N.PAGE DOWN" "HELP:   Display next page, Ctrl-P  Basic help"
                HELP 0001 IF( usr_pg[2] = 'N' )THEN ERROR mess[25] CLIPPED
-               ELSE CALL Cset_int() CALL pgfun(TRUE)
+               ELSE CALL Cset_int() CALL clearLine() CALL pgfun(TRUE)
                END IF
       COMMAND "U.PAGE UP" "HELP:   Display previous page, Ctrl-P Basic help"
                HELP 0001 IF( usr_pg[2] = 'N' )THEN ERROR mess[25] CLIPPED
-               ELSE CALL Cset_int() CALL pgfun(FALSE)
+               ELSE CALL Cset_int() CALL clearLine() CALL pgfun(FALSE)
                END IF
       COMMAND "7.Print"
               "HELP:   Inquire data, Esc to run, Del to abort, Ctrl-P Basic help"
                HELP 0001 IF( usr_pg[2] = 'N' )THEN ERROR mess[25] CLIPPED
-               ELSE CALL Cset_int() CALL prtfun()
+               ELSE CALL Cset_int() CALL clearLine() CALL prtfun()
                END IF
       COMMAND "H.HELP" "HELP:   Operation Help"
                CALL showhelp(0114)
@@ -164,8 +164,6 @@ FUNCTION inqfun(iv_option)
    DEFINE wk_str CHAR(100)
    
    CLEAR FORM
-   DISPLAY "" AT 23, 1
-   DISPLAY "" AT 22, 1
 
    INITIALIZE PH.* TO NULL #Reset PH cursor for begining search
    IF iv_option
@@ -296,7 +294,6 @@ FUNCTION inq100(iv_phPosition)
    CALL closeCursorStd()
 
    LET cc = cc - 1
-   DISPLAY "" AT 24, 1
    IF cc > scr_ary THEN
       ERROR mess[14] CLIPPED
    ELSE
@@ -482,17 +479,30 @@ FUNCTION add200(iv_option, iv_option1)
          THEN
             DISPLAY BY NAME P_errno[aln].*
          END IF
+         IF iv_option1 
+         THEN 
+            DISPLAY "Press CONTROL-O to delete present record, CONTROL-N to delete on record." AT 21,1
+         END IF
       BEFORE FIELD machcode
-         ERROR "Press CONTROL-W to show options."
+         IF NOT iv_option1
+         THEN
+            ERROR "Press CONTROL-W to show options."
+         END IF
       BEFORE FIELD press
-         ERROR "Y.同意扣工時 N.不扣工時"
+         IF NOT iv_option1
+         THEN
+            ERROR "Y.同意扣工時 N.不扣工時"
+         END IF
       ON KEY (CONTROL-Z)
-         CALL add100(TRUE, FALSE, PH.*)
-         IF INT_FLAG THEN
-            LET INT_FLAG = FALSE 
-            CLEAR FORM
-            ERROR mess[5] CLIPPED
-            RETURN
+         IF NOT iv_option1
+         THEN
+            CALL add100(TRUE, FALSE, PH.*)
+            IF INT_FLAG THEN
+               LET INT_FLAG = FALSE 
+               CLEAR FORM
+               ERROR mess[5] CLIPPED
+               RETURN
+            END IF
          END IF
       ON KEY (CONTROL-O)
          IF iv_option1
@@ -507,8 +517,9 @@ FUNCTION add200(iv_option, iv_option1)
                   IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
                      ERROR mess[63] CLIPPED
                      ROLLBACK WORK
-                  END IF
+                  END IF 
                   LET wk_recordDel = wk_recordDel + 1
+                  ERROR mess[60] CLIPPED
                COMMIT WORK
             END IF
          END IF
@@ -538,34 +549,38 @@ FUNCTION add200(iv_option, iv_option1)
                   END FOR
                COMMIT WORK
                ERROR mess[53] CLIPPED, cnt1 USING "<<< & ",mess[41] CLIPPED
-               EXIT INPUT
                CALL reopen()
+               EXIT INPUT
+               
             END IF
          END IF
       ON KEY(F5, CONTROL-W)
-         IF INFIELD(machcode)
-         THEN
-            CALL win_w213(PH.manuf,PH.pitems,PH.dept) RETURNING P1[aln].kind,P1[aln].machcode
-            IF P1[aln].kind
+         IF NOT iv_option1
+         THEN 
+            IF INFIELD(machcode)
             THEN
-               DISPLAY P1[aln].kind TO SR[sln].kind
-               DISPLAY P1[aln].machcode TO SR[sln].machcode
-            ELSE
-               IF frmtyp = '2' THEN
-                  CALL cal_err("Kind and machcode weren't found","please try again")
+               CALL win_w213(PH.manuf,PH.pitems,PH.dept) RETURNING P1[aln].kind,P1[aln].machcode
+               IF P1[aln].kind
+               THEN
+                  DISPLAY P1[aln].kind TO SR[sln].kind ATTRIBUTE(REVERSE)
+                  DISPLAY P1[aln].machcode TO SR[sln].machcode ATTRIBUTE(REVERSE)
                ELSE
-                  CALL cal_err("無異常工時計算代碼","請重新輸入")
+                  IF frmtyp = '2' THEN
+                     CALL cal_err("Kind and machcode weren't found","please try again")
+                  ELSE
+                     CALL cal_err("無異常工時計算代碼","請重新輸入")
+                  END IF
+                  NEXT FIELD machcode
                END IF
-               NEXT FIELD machcode
+               NEXT FIELD machno
             END IF
-            NEXT FIELD machno
          END IF
       AFTER FIELD machcode
-      IF P1[aln].machcode IS NULL OR P1[aln].machcode MATCHES "[ ]"
-      THEN
-         LET P1[aln].kind = NULL
-         DISPLAY P1[aln].kind TO SR[sln].kind 
-      END IF
+         IF P1[aln].machcode IS NULL OR P1[aln].machcode MATCHES "[ ]"
+         THEN
+            LET P1[aln].kind = NULL
+            DISPLAY P1[aln].kind TO SR[sln].kind ATTRIBUTE(REVERSE)
+         END IF
       AFTER ROW  
          -- LET wk_key = FGL_LASTKEY()
          -- IF wk_key == FGL_KEYVAL("ACCEPT") OR wk_key == FGL_KEYVAL("ESC") OR wk_key == FGL_KEYVAL("TAB")
@@ -591,7 +606,7 @@ FUNCTION add200(iv_option, iv_option1)
                   CALL checkExists(PH.manuf, PH.pitems, PH.dept, P1[aln].machcode) RETURNING P1[aln].kind
                   IF P1[aln].kind
                   THEN
-                     DISPLAY P1[aln].kind TO SR[sln].kind
+                     DISPLAY P1[aln].kind TO SR[sln].kind ATTRIBUTE(REVERSE)
                   ELSE
                      IF frmtyp = '2' THEN
                         CALL cal_err("Kind and machcode weren't found","please try again")
@@ -620,7 +635,7 @@ FUNCTION add200(iv_option, iv_option1)
                IF (P1[aln].posno IS NOT NULL OR P1[aln].posno != 0) AND (P1[aln].hole IS NOT NULL OR P1[aln].hole != 0) THEN
                   LET P1[aln].slosshole = 1
                END IF
-               DISPLAY P1[aln].slosshole TO SR[sln].slosshole   
+               DISPLAY P1[aln].slosshole TO SR[sln].slosshole   ATTRIBUTE(REVERSE)
             -- check rmodel field
                IF (P1[aln].rmodel IS NULL OR P1[aln].rmodel MATCHES "[ ]") AND P1[aln].kind MATCHES '[Y]' 
                THEN
@@ -705,7 +720,7 @@ FUNCTION add200(iv_option, iv_option1)
                      LET P1[aln].slossprs = wk_cycqty
                   END IF          	
                END IF
-               DISPLAY P1[aln].slosshole TO SR[sln].slosshole 
+               DISPLAY P1[aln].slosshole TO SR[sln].slosshole ATTRIBUTE(REVERSE)
             -- check slossgw field
                IF (P1[aln].slossgw IS NULL OR P1[aln].slossgw = 0.0) AND P1[aln].kind MATCHES '[N]'  
                THEN
@@ -728,7 +743,7 @@ FUNCTION add200(iv_option, iv_option1)
                      LET P1[aln].slossprs = P1[aln].slossgw/wk_lossgw
                   END IF	   
                END IF
-               DISPLAY P1[aln].slossgw TO SR[sln].slossgw 
+               DISPLAY P1[aln].slossgw TO SR[sln].slossgw ATTRIBUTE(REVERSE)
             -- check slossprs field
                IF (P1[aln].slossprs IS NULL OR P1[aln].slossprs = 0.0) AND P1[aln].kind MATCHES '[YNG]'  THEN
                   ERROR mess[15] CLIPPED 
@@ -749,7 +764,7 @@ FUNCTION add200(iv_option, iv_option1)
                      LET P1[aln].slossprs = P1[aln].errhr * wk_lossprs
                   END IF 
                END IF
-               DISPLAY P1[aln].slossprs TO SR[sln].slossprs 
+               DISPLAY P1[aln].slossprs TO SR[sln].slossprs  ATTRIBUTE(REVERSE)
             -- check press field
                IF (P1[aln].press IS NOT NULL OR P1[aln].press NOT MATCHES "[ ]") AND P1[aln].press NOT MATCHES "[YN]" THEN
                   NEXT FIELD press
@@ -813,7 +828,7 @@ FUNCTION add200(iv_option, iv_option1)
                      CALL checkExists(PH.manuf, PH.pitems, PH.dept, P1[aln].machcode) RETURNING P1[aln].kind
                      IF P1[aln].kind
                      THEN
-                        DISPLAY P1[aln].kind TO SR[sln].kind
+                        DISPLAY P1[aln].kind TO SR[sln].kind ATTRIBUTE(REVERSE)
                      ELSE
                         IF frmtyp = '2' THEN
                            CALL cal_err("Kind and machcode weren't found","please try again")
@@ -842,7 +857,7 @@ FUNCTION add200(iv_option, iv_option1)
                   IF (P1[aln].posno IS NOT NULL OR P1[aln].posno != 0) AND (P1[aln].hole IS NOT NULL OR P1[aln].hole != 0) THEN
                      LET P1[aln].slosshole = 1
                   END IF
-                  DISPLAY P1[aln].slosshole TO SR[sln].slosshole   
+                  DISPLAY P1[aln].slosshole TO SR[sln].slosshole   ATTRIBUTE(REVERSE)
                -- check rmodel field
                   IF (P1[aln].rmodel IS NULL OR P1[aln].rmodel MATCHES "[ ]") AND P1[aln].kind MATCHES '[Y]' 
                   THEN
@@ -927,7 +942,7 @@ FUNCTION add200(iv_option, iv_option1)
                         LET P1[aln].slossprs = wk_cycqty
                      END IF          	
                   END IF
-                  DISPLAY P1[aln].slosshole TO SR[sln].slosshole 
+                  DISPLAY P1[aln].slosshole TO SR[sln].slosshole ATTRIBUTE(REVERSE)
                -- check slossgw field
                   IF (P1[aln].slossgw IS NULL OR P1[aln].slossgw = 0.0) AND P1[aln].kind MATCHES '[N]'  
                   THEN
@@ -950,7 +965,7 @@ FUNCTION add200(iv_option, iv_option1)
                         LET P1[aln].slossprs = P1[aln].slossgw/wk_lossgw
                      END IF	   
                   END IF
-                  DISPLAY P1[aln].slossgw TO SR[sln].slossgw 
+                  DISPLAY P1[aln].slossgw TO SR[sln].slossgw ATTRIBUTE(REVERSE)
                -- check slossprs field
                   IF (P1[aln].slossprs IS NULL OR P1[aln].slossprs = 0.0) AND P1[aln].kind MATCHES '[YNG]'  THEN
                      ERROR mess[15] CLIPPED 
@@ -971,7 +986,7 @@ FUNCTION add200(iv_option, iv_option1)
                         LET P1[aln].slossprs = P1[aln].errhr * wk_lossprs
                      END IF 
                   END IF
-                  DISPLAY P1[aln].slossprs TO SR[sln].slossprs 
+                  DISPLAY P1[aln].slossprs TO SR[sln].slossprs ATTRIBUTE(REVERSE)
                -- check press field
                   IF (P1[aln].press IS NOT NULL OR P1[aln].press NOT MATCHES "[ ]") AND P1[aln].press NOT MATCHES "[YN]" THEN
                      NEXT FIELD press
@@ -1009,10 +1024,18 @@ FUNCTION add200(iv_option, iv_option1)
                   DISPLAY P1[aln].slossgw   TO SR[sln].slossgw   ATTRIBUTE(REVERSE)
                   DISPLAY P1[aln].press   TO SR[sln].press   ATTRIBUTE(REVERSE)
                END IF
+            ELSE
+               IF iv_option1
+               THEN
+                  IF wk_recordDel THEN
+                     ERROR mess[53] CLIPPED, wk_recordDel USING "<<< & ",mess[41] CLIPPED SLEEP 1
+                     CALL reopen()
+                  END IF
+               END IF
             END IF
          ELSE
             IF iv_option1 THEN
-               PROMPT "Do you really want to cancle (y/Y for Yes, another for No)? " FOR wk_prompt
+               PROMPT "Do you really want to exit delete fucntion (y/Y for Yes, another for No)? " FOR wk_prompt
             ELSE
                PROMPT "Do you really want to cancle input (y/Y for Yes, another for No)? " FOR wk_prompt
             END IF
@@ -1023,7 +1046,8 @@ FUNCTION add200(iv_option, iv_option1)
                IF iv_option1
                THEN
                   IF wk_recordDel THEN
-                     ERROR mess[53] CLIPPED, wk_recordDel USING "<<< & ",mess[41] CLIPPED
+                     ERROR mess[53] CLIPPED, wk_recordDel USING "<<< & ",mess[41] CLIPPED SLEEP 1
+                     CALL reopen()
                   END IF
                END IF
             END IF
@@ -1035,9 +1059,6 @@ FUNCTION addfun()
    DEFINE wk_incorrect INTEGER
    DEFINE wk_countAddSuccess INTEGER
    DEFINE wk_errno LIKE w214.errno
-
-   DISPLAY "" AT 23, 1
-   DISPLAY "" AT 22, 1
 
    LET wk_incorrect = 0
    LET wk_countAddSuccess = 0
@@ -1095,11 +1116,11 @@ FUNCTION addfun()
             ERROR mess[04] CLIPPED
             RETURN
          END IF
-         IF P1[aln].errhr     IS NULL THEN LET P1[aln].errhr     = 0   END IF
-         IF P1[aln].slosshole IS NULL THEN LET P1[aln].slosshole = 0   END IF
-         IF P1[aln].slossgw   IS NULL THEN LET P1[aln].slossgw   = 0.0 END IF
-         IF P1[aln].slossprs  IS NULL THEN LET P1[aln].slossprs  = 0.0 END IF
-         IF P1[aln].press     IS NULL OR P1[cc].press NOT MATCHES "[YN]" THEN LET P1[aln].press     = 'N' END IF
+         IF P1[cc].errhr     IS NULL THEN LET P1[cc].errhr     = 0   END IF
+         IF P1[cc].slosshole IS NULL THEN LET P1[cc].slosshole = 0   END IF
+         IF P1[cc].slossgw   IS NULL THEN LET P1[cc].slossgw   = 0.0 END IF
+         IF P1[cc].slossprs  IS NULL THEN LET P1[cc].slossprs  = 0.0 END IF
+         IF P1[cc].press     IS NULL OR P1[cc].press NOT MATCHES "[YN]" THEN LET P1[cc].press     = 'N' END IF
          INSERT INTO w215 
          VALUES (wk_errno, P1[cc].kind, P1[cc].machcode, P1[cc].machno, P1[cc].posno, P1[cc].hole, P1[cc].rmodel, P1[cc].tolcls, P1[cc].errhr, P1[cc].slosshole, P1[cc].slossgw, P1[cc].slossprs, P1[cc].press, login_usr, CURRENT YEAR TO SECOND)
          IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
@@ -1136,8 +1157,6 @@ FUNCTION updfun()
    DEFINE wk_flagContent, wk_flagHead SMALLINT
    DEFINE wk_countDel INTEGER
 
-   DISPLAY "" AT 23, 1
-
    LET wk_countUpdateSuccess = 0
    LET wk_countDel = 0
 
@@ -1149,7 +1168,7 @@ FUNCTION updfun()
       ERROR mess[10] CLIPPED
       RETURN
    END IF
-   DISPLAY "If you prompt the row is empty, this row will be removed!" AT 22, 1
+   DISPLAY "If you prompt the row is empty, this row will be removed!" AT 23, 1
    OPTIONS INSERT KEY F13,
          DELETE KEY F14
 
@@ -1227,9 +1246,12 @@ FUNCTION updfun()
                LET  wk_incorrect = wk_incorrect + 1
                CONTINUE FOR
             END IF 
-         
-            IF P1[cc1].press NOT MATCHES "[YN]" THEN LET P1[cc1].press = "N" END IF
             --
+            IF P1[cc1].errhr     IS NULL THEN LET P1[cc1].errhr     = 0   END IF
+            IF P1[cc1].slosshole IS NULL THEN LET P1[cc1].slosshole = 0   END IF
+            IF P1[cc1].slossgw   IS NULL THEN LET P1[cc1].slossgw   = 0.0 END IF
+            IF P1[cc1].slossprs  IS NULL THEN LET P1[cc1].slossprs  = 0.0 END IF
+            IF P1[cc1].press     IS NULL OR P1[cc1].press NOT MATCHES "[YN]" THEN LET P1[cc1].press     = 'N' END IF
             UPDATE w215 
             SET (machcode, kind, machno, posno, hole, rmodel, tolcls, errhr, slosshole, slossgw, slossprs, press, upusr, upday)
             = (P1[cc1].machcode, P1[cc1].kind, P1[cc1].machno, P1[cc1].posno, P1[cc1].hole, P1[cc1].rmodel, P1[cc1].tolcls, P1[cc1].errhr, P1[cc1].slosshole, P1[cc1].slossgw, P1[cc1].slossprs, P1[cc1].press, login_usr, CURRENT YEAR TO SECOND)
@@ -1298,9 +1320,6 @@ FUNCTION updfun()
 END FUNCTION
 #----------------------------------------------------------------------
 FUNCTION delfun()
-   DISPLAY "" AT 23, 1
-   DISPLAY "" AT 22, 1
-
    IF op_code = "N" THEN
       ERROR mess[16] CLIPPED
       RETURN
@@ -1311,7 +1330,7 @@ FUNCTION delfun()
    END IF
    CALL SET_COUNT(cc)
 
-   CALL add200(TRUE, FALSE)
+   CALL add200(TRUE, TRUE)
 
    -- CALL ans() RETURNING ans1
    -- IF ans1 MATCHES "[^Yy]" THEN
@@ -1344,9 +1363,6 @@ END FUNCTION
 FUNCTION pgfun(move)
    DEFINE move SMALLINT
    DEFINE wk_message CHAR(300)
-
-   DISPLAY "" AT 23, 1
-   DISPLAY "" AT 22, 1
 
    IF op_code = "N" THEN
       ERROR mess[16] CLIPPED
@@ -1441,10 +1457,6 @@ FUNCTION disfun()
       ERROR mess[10] CLIPPED
       RETURN
    END IF
-   DISPLAY "" AT 1, 1
-   DISPLAY "" AT 2, 1
-   DISPLAY "" AT 23, 1
-   
 
    DISPLAY mess[29] CLIPPED,mess[32] CLIPPED AT 1, 1
    DISPLAY "Press CONTROL-Z to see errno field value." AT 22, 1
@@ -1505,7 +1517,6 @@ FUNCTION disfun()
    CALL SET_COUNT (cc)
    DISPLAY "" AT 1, 1
    DISPLAY "" AT 2, 1
-   DISPLAY "" AT 23, 1
    DISPLAY mess[29] CLIPPED,mess[32] CLIPPED AT 1, 1
    IF frmtyp ='1' THEN
       DISPLAY "共 ",cc USING "<<<#"," 筆 " AT 23, 1
@@ -1570,9 +1581,7 @@ FUNCTION prtfun()
 
    DISPLAY "" AT 1,1
    DISPLAY "" AT 2,1
-   LET offset1 =  80
-   DISPLAY "" AT 23, 1
-   DISPLAY "" AT 22, 1        
+   LET offset1 =  80       
    IF op_code = "N" THEN
       ERROR mess[16] CLIPPED  
       RETURN
@@ -1675,7 +1684,7 @@ REPORT fo223av(P, R)
          PRINT "Print user: ",login_usr CLIPPED,"|||",
                "Print time: ",TIME
          PRINT "pitems: ",R.pitems CLIPPED,".",P.pitemsna CLIPPED,
-               "|||||||department: ",R.dept CLIPPED,".",P.pitemsna CLIPPED
+               "|||||||department: ",R.dept CLIPPED,".",P.deptna CLIPPED
          IF frmtyp = 1 THEN
             PRINT   "kind|machcode|machno|posno|hole|slosshole|slossgw|slossprs|press"
          ELSE
@@ -1782,4 +1791,11 @@ FUNCTION get_no(iv_flag, iv_dept)
       END IF
    END IF
    RETURN iv_number
+END FUNCTION
+
+FUNCTION clearLine()
+   DISPLAY "" AT 21, 1
+   DISPLAY "" AT 22, 1
+   DISPLAY "" AT 23, 1
+   DISPLAY "" AT 24, 1
 END FUNCTION
