@@ -51,39 +51,39 @@ FUNCTION mainfun()
          COMMAND "1.新增"
                "說明:   新增資料, 按 Esc 執行, Del 放棄, Ctrl-P 基本操作說明"
                   HELP 0001 IF( usr_pg[1] = 'N' )THEN ERROR mess[25] CLIPPED
-                  ELSE CALL Cset_int() CALL curfun() CALL addfun()
+                  ELSE CALL Cset_int() CALL clearLine() CALL curfun() CALL addfun()
                   END IF
          COMMAND "2.查詢"
                   "說明:   查詢資料, 按 Esc 執行, Del 放棄, Ctrl-P 基本操作說明"
                   HELP 0001 IF( usr_pg[2] = 'N' )THEN ERROR mess[25] CLIPPED
-                  ELSE CALL Cset_int() CALL inqfun(TRUE)
+                  ELSE CALL Cset_int() CALL clearLine() CALL inqfun(TRUE)
                   END IF
          COMMAND "3.修改"
                   "說明:   修改資料, 按 Esc 執行, Del 放棄, Ctrl-P 基本操作說明"
                   HELP 0001 IF( usr_pg[3] = 'N' )THEN ERROR mess[25] CLIPPED
-                  ELSE CALL Cset_int() CALL updfun()
+                  ELSE CALL Cset_int() CALL clearLine()  CALL updfun()
                   END IF
          COMMAND "4.刪除"
                   "說明:   刪除此張資料, 按 Y 執行, Del 放棄, Ctrl-P 基本操作說明"
                   HELP 0001 IF( usr_pg[4] = 'N' )THEN ERROR mess[25] CLIPPED
-                  ELSE CALL Cset_int() CALL delfun()
+                  ELSE CALL Cset_int() CALL clearLine() CALL delfun()
                   END IF
          COMMAND "5.明細查詢" "說明:   查詢目前所顯示之明細資料, Ctrl-P 基本操作說明"
                   HELP 0001 IF( usr_pg[2] = 'N' )THEN ERROR mess[25] CLIPPED
-                  ELSE CALL Cset_int() CALL disfun()
+                  ELSE CALL Cset_int() CALL clearLine() CALL disfun()
                   END IF
          COMMAND "N.下張" "說明:   顯示下一張資料, Ctrl-P 基本操作說明"
                   HELP 0001 IF( usr_pg[2] = 'N' )THEN ERROR mess[25] CLIPPED
-                  ELSE CALL Cset_int() CALL pgfun(TRUE)
+                  ELSE CALL Cset_int() CALL clearLine() CALL pgfun(TRUE)
                   END IF
          COMMAND "U.上張" "說明:   顯示上一張資料, Ctrl-P 基本操作說明"
                   HELP 0001 IF( usr_pg[2] = 'N' )THEN ERROR mess[25] CLIPPED
-                  ELSE CALL Cset_int() CALL pgfun(FALSE)
+                  ELSE CALL Cset_int() CALL clearLine() CALL pgfun(FALSE)
                   END IF
          COMMAND "7.輸入清單"
                   "說明:   修改資料, 按 Esc 執行, Del 放棄, Ctrl-P 基本操作說明"
                   HELP 0001 IF( usr_pg[2] = 'N' )THEN ERROR mess[25] CLIPPED
-                  ELSE CALL Cset_int() CALL prtfun()
+                  ELSE CALL Cset_int() CALL clearLine() CALL prtfun()
                   END IF
          COMMAND "H.說明" "說明:   程式操作輔助說明"
                CALL showhelp(0114)
@@ -95,36 +95,36 @@ FUNCTION mainfun()
                EXIT MENU
       COMMAND "1.CREATE" "HELP:   Create data, Esc to run, Del to abort, Ctrl-P Basic help"
                HELP 0001 IF( usr_pg[1] = 'N' )THEN ERROR mess[25] CLIPPED
-               ELSE CALL Cset_int() CALL curfun() CALL addfun()
+               ELSE CALL Cset_int() CALL clearLine() CALL curfun() CALL addfun()
                END IF
       COMMAND "2.INQUIRE" "HELP:   Inquire data, Esc to run, Del to abort, Ctrl-P Basic help"
                 HELP 0001 IF( usr_pg[2] = 'N' )THEN ERROR mess[25] CLIPPED
-                ELSE CALL Cset_int() CALL inqfun(TRUE)
+                ELSE CALL Cset_int() CALL clearLine() CALL inqfun(TRUE)
                 END IF
       COMMAND "3.UPDATE" "HELP:   UPDATE data, Esc to run, Del to abort, Ctrl-P Basic help"
                 HELP 0001 IF( usr_pg[3] = 'N' )THEN ERROR mess[25] CLIPPED
-                ELSE CALL Cset_int() CALL updfun()
+                ELSE CALL Cset_int() CALL clearLine() CALL updfun()
                 END IF
       COMMAND "4.DELETE" "HELP:   Delete data, Esc to run, Del to abort, Ctrl-P Basic help"
                 HELP 0001 IF( usr_pg[4] = 'N' )THEN ERROR mess[25] CLIPPED
-                ELSE CALL Cset_int() CALL delfun()
+                ELSE CALL Cset_int() CALL clearLine() CALL delfun()
                 END IF
       COMMAND "5.DETAIL QUERY" "HELP:   Display detail Data, Ctrl-P Basic help"
                 HELP 0001 IF( usr_pg[2] = 'N' )THEN ERROR mess[25] CLIPPED
-                ELSE CALL Cset_int() CALL disfun()
+                ELSE CALL Cset_int() CALL clearLine() CALL disfun()
                 END IF
       COMMAND "N.PAGE DOWN" "HELP:   Display next page, Ctrl-P  Basic help"
                HELP 0001 IF( usr_pg[2] = 'N' )THEN ERROR mess[25] CLIPPED
-               ELSE CALL Cset_int() CALL pgfun(TRUE)
+               ELSE CALL Cset_int() CALL clearLine() CALL pgfun(TRUE)
                END IF
       COMMAND "U.PAGE UP" "HELP:   Display previous page, Ctrl-P Basic help"
                HELP 0001 IF( usr_pg[2] = 'N' )THEN ERROR mess[25] CLIPPED
-               ELSE CALL Cset_int() CALL pgfun(FALSE)
+               ELSE CALL Cset_int() CALL clearLine() CALL pgfun(FALSE)
                END IF
       COMMAND "7.Print"
               "HELP:   Inquire data, Esc to run, Del to abort, Ctrl-P Basic help"
                HELP 0001 IF( usr_pg[2] = 'N' )THEN ERROR mess[25] CLIPPED
-               ELSE CALL Cset_int() CALL prtfun()
+               ELSE CALL Cset_int() CALL clearLine() CALL prtfun()
                END IF
       COMMAND "H.HELP" "HELP:   Operation Help"
                CALL showhelp(0114)
@@ -136,8 +136,6 @@ END FUNCTION
 FUNCTION inqfun(iv_option)
    DEFINE iv_option SMALLINT
    CLEAR FORM
-   DISPLAY "" AT 23, 1
-   DISPLAY "" AT 22, 1
 
    INITIALIZE PH.* TO NULL #Reset PH cursor for begining search
    IF iv_option
@@ -232,7 +230,6 @@ FUNCTION inq100(iv_phPosition)
    CALL closeCursorStd()
 
    LET cc = cc - 1
-   DISPLAY "" AT 24, 1
    IF cc > scr_ary THEN
       ERROR mess[14] CLIPPED
    ELSE
@@ -259,9 +256,6 @@ FUNCTION addfun()
    DEFINE wk_duplicate INTEGER
    DEFINE wk_countAddSuccess INTEGER
 
-   DISPLAY "" AT 23, 1
-   DISPLAY "" AT 22, 1
-
    LET wk_duplicate = 0
    LET wk_countAddSuccess = 0
    INITIALIZE PH.* TO NULL
@@ -282,7 +276,7 @@ FUNCTION addfun()
    END IF
    ------
 
-   CALL add200(FALSE)
+   CALL add200(FALSE, FALSE)
    IF INT_FLAG THEN
       LET INT_FLAG = FALSE
       CLEAR FORM
@@ -407,12 +401,16 @@ FUNCTION add100(iv_option1, iv_option2, iv_record)
 
 END FUNCTION
 #-------------------------------------------------------------------------------
-FUNCTION add200(iv_option)
-   DEFINE iv_option SMALLINT
+FUNCTION add200(iv_option, iv_option1)
+   DEFINE iv_option, iv_option1 SMALLINT
    DEFINE wk_key SMALLINT
    DEFINE iv_cc SMALLINT
    DEFINE wk_goto SMALLINT
+   DEFINE wk_recordDel INTEGER
+   DEFINE wk_prompt CHAR(1)
+
    LET wk_goto = FALSE
+   LET wk_recordDel = 0
 
    INPUT ARRAY P1 WITHOUT DEFAULTS FROM SR.*
       BEFORE ROW
@@ -427,148 +425,229 @@ FUNCTION add200(iv_option)
       BEFORE FIELD kind
          ERROR "Values are only 'F', 'Y', 'N' and 'G'!"
       ON KEY (CONTROL-Z)
-         LABEL lblCallAdd100:
-         CALL add100(TRUE, FALSE, PH.*)
-         IF INT_FLAG THEN
-            DISPLAY "" AT 22, 1
-            LET INT_FLAG = FALSE
-            CLEAR FORM
-            ERROR mess[5] CLIPPED
-            RETURN
-         END IF
-
-      AFTER ROW
-         LET wk_key = FGL_LASTKEY()
-         IF wk_key == FGL_KEYVAL("ACCEPT") OR wk_key == FGL_KEYVAL("ESC") OR wk_key == FGL_KEYVAL("TAB")
+         IF iv_option1
          THEN
-            IF P1[aln].kind IS NULL OR P1[aln].kind MATCHES "[ ]" THEN
-               ERROR mess[15]
-               NEXT FIELD kind
-            ELSE
-               IF P1[aln].kind NOT MATCHES "[FYNG]" 
-               THEN
-                  NEXT FIELD kind
-                  ERROR "Values are only 'F', 'Y', 'N' and 'G'!"
-               ELSE
-                  IF P1[aln].kind MATCHES "[Y]" 
-                  THEN
-                     IF p1[aln].posno IS NULL OR P1[aln].posno MATCHES "[ ]" THEN
-                        ERROR mess[15]
-                        NEXT FIELD posno
+            LABEL lblCallAdd100:
+            CALL add100(TRUE, FALSE, PH.*)
+            IF INT_FLAG THEN
+               LET INT_FLAG = FALSE
+               CLEAR FORM
+               ERROR mess[5] CLIPPED
+               RETURN
+            END IF
+         END IF
+      ON KEY (CONTROL-O)
+         IF iv_option1
+         THEN
+            PROMPT "Do you really want to remove this record (y/Y for Yes, another for No)? " FOR wk_prompt
+            IF wk_prompt MATCHES "[yY]"
+            THEN
+               INITIALIZE P1[aln].* TO NULL
+               DISPLAY P1[aln].* TO SR[sln].* ATTRIBUTE(REVERSE)
+               BEGIN WORK
+                  DELETE FROM w213 WHERE ROWID = Wrowid[aln]
+                  IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
+                     ERROR mess[63] CLIPPED
+                     ROLLBACK WORK
+                  END IF 
+                  LET wk_recordDel = wk_recordDel + 1
+                  ERROR mess[60] CLIPPED
+               COMMIT WORK
+            END IF
+         END IF
+      ON KEY (CONTROL-M)
+         IF iv_option1
+         THEN
+            PROMPT "Do you really want to remove all record (y/Y for Yes, another for No)? " FOR wk_prompt
+            IF wk_prompt MATCHES "[yY]"
+            THEN
+               LET cnt1 = 0
+               BEGIN WORK
+                  FOR cc1 = 1 TO cc
+                     DELETE FROM w213 WHERE ROWID = Wrowid[cc1]
+                     IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
+                        ERROR mess[63] CLIPPED
+                        ROLLBACK WORK
+                        RETURN
                      END IF
-                     IF p1[aln].hole IS NULL OR P1[aln].hole MATCHES "[ ]" THEN
-                        ERROR mess[15]
-                        NEXT FIELD hole
+                  END FOR
+               COMMIT WORK
+               ERROR mess[53] CLIPPED, cnt1 USING "<<< & ",mess[41] CLIPPED
+               CALL reopen()
+               EXIT INPUT
+            END IF
+         END IF
+      AFTER ROW
+            IF (P1[aln].kind IS NOT NULL OR P1[aln].kind NOT MATCHES "[ ]")
+               OR (P1[aln].mach_cn IS NOT NULL OR P1[aln].mach_cn NOT MATCHES "[ ]")
+               OR (P1[aln].mach_en IS NOT NULL OR P1[aln].mach_en NOT MATCHES "[ ]")
+               OR (P1[aln].machcode IS NOT NULL OR P1[aln].machcode NOT MATCHES "[ ]")
+               OR (P1[aln].posno IS NOT NULL OR P1[aln].posno NOT MATCHES "[ ]" OR P1[aln].posno != 0)
+               OR (P1[aln].hole IS NOT NULL OR P1[aln].hole NOT MATCHES "[ ]" OR P1[aln].hole != 0)
+               OR (P1[aln].lossprs IS NOT NULL OR P1[aln].lossprs NOT MATCHES "[ ]" OR P1[aln].lossprs != 0.0)
+               OR (P1[aln].losshr IS NOT NULL OR P1[aln].losshr NOT MATCHES "[ ]" OR P1[aln].losshr != 0.0)
+               OR (P1[aln].lossgw IS NOT NULL OR P1[aln].lossgw NOT MATCHES "[ ]" OR P1[aln].lossgw != 0.0)
+            THEN 
+               IF P1[aln].kind IS NULL OR P1[aln].kind MATCHES "[ ]" THEN
+                  ERROR mess[15]
+                  NEXT FIELD kind
+               ELSE
+                  IF P1[aln].kind NOT MATCHES "[FYNG]" 
+                  THEN
+                     NEXT FIELD kind
+                     ERROR "Values are only 'F', 'Y', 'N' and 'G'!"
+                  ELSE
+                     IF P1[aln].kind MATCHES "[Y]" 
+                     THEN
+                        IF p1[aln].posno IS NULL OR P1[aln].posno MATCHES "[ ]" THEN
+                           ERROR mess[15]
+                           NEXT FIELD posno
+                        END IF
+                        IF p1[aln].hole IS NULL OR P1[aln].hole MATCHES "[ ]" THEN
+                           ERROR mess[15]
+                           NEXT FIELD hole
+                        END IF
+                     ELSE
+                        ERROR ""
+                     END IF
+                  END IF
+               END IF
+               IF P1[aln].machcode IS NULL OR P1[aln].machcode MATCHES "[ ]"  THEN
+                  ERROR mess[15]
+                  NEXT FIELD machcode
+               ELSE
+                  IF (NOT iv_option) OR (iv_option AND (P2[aln].machcode != P1[aln].machcode OR PH1.pitems != PH.pitems OR PH1.dept != PH.dept))
+                  THEN
+                     LET iv_cc = 0
+                     SELECT COUNT(*) INTO iv_cc FROM w213
+                     WHERE manuf = PH.manuf AND pitems = PH.pitems AND dept = PH.dept AND machcode = P1[aln].machcode
+                     IF iv_cc > 0 THEN
+                        ERROR mess[2]
+                        IF ((PH1.pitems != PH.pitems OR PH1.dept != PH.dept) AND iv_option) OR NOT iv_option
+                        THEN
+                           LET wk_goto = TRUE
+                           GOTO lblCallAdd100
+                        END IF
+                        IF P2[aln].machcode != P1[aln].machcode AND iv_option
+                        THEN 
+                           NEXT FIELD machcode
+                        END IF
                      END IF
                   ELSE
-                     ERROR ""
+                     IF wk_goto THEN CALL add200(TRUE, FALSE) END IF
                   END IF
                END IF
-            END IF
-            IF P1[aln].machcode IS NULL OR P1[aln].machcode MATCHES "[ ]"  THEN
-               ERROR mess[15]
-               NEXT FIELD machcode
-            ELSE
-               IF (NOT iv_option) OR (iv_option AND (P2[aln].machcode != P1[aln].machcode OR PH1.pitems != PH.pitems OR PH1.dept != PH.dept))
-               THEN
-                  LET iv_cc = 0
-                  SELECT COUNT(*) INTO iv_cc FROM w213
-                  WHERE manuf = PH.manuf AND pitems = PH.pitems AND dept = PH.dept AND machcode = P1[aln].machcode
-                  IF iv_cc > 0 THEN
-                     ERROR mess[2]
-                     IF ((PH1.pitems != PH.pitems OR PH1.dept != PH.dept) AND iv_option) OR NOT iv_option
-                     THEN
-                        LET wk_goto = TRUE
-                        GOTO lblCallAdd100
-                     END IF
-                     IF P2[aln].machcode != P1[aln].machcode AND iv_option
-                     THEN 
-                        NEXT FIELD machcode
-                     END IF
-                  END IF
-               ELSE
-                  IF wk_goto THEN CALL add200(TRUE) END IF
+               IF P1[aln].lossprs IS NULL OR P1[aln].lossprs MATCHES "[ ]"  THEN
+                  ERROR mess[15]
+                  NEXT FIELD lossprs
                END IF
-            END IF
-            IF P1[aln].lossprs IS NULL OR P1[aln].lossprs MATCHES "[ ]"  THEN
-               ERROR mess[15]
-               NEXT FIELD lossprs
-            END IF
-            IF P1[aln].losshr IS NULL OR P1[aln].losshr MATCHES "[ ]"  THEN
-               ERROR mess[15]
-               NEXT FIELD losshr
-            END IF
-            IF P1[aln].lossgw IS NULL OR P1[aln].lossgw MATCHES "[ ]" THEN
-               ERROR mess[15]
-               NEXT FIELD lossgw
-            END IF
+               IF P1[aln].losshr IS NULL OR P1[aln].losshr MATCHES "[ ]"  THEN
+                  ERROR mess[15]
+                  NEXT FIELD losshr
+               END IF
+               IF P1[aln].lossgw IS NULL OR P1[aln].lossgw MATCHES "[ ]" THEN
+                  ERROR mess[15]
+                  NEXT FIELD lossgw
+               END IF
          END IF
       AFTER INPUT
          LET wk_key = FGL_LASTKEY()
          IF wk_key == FGL_KEYVAL("ACCEPT") OR wk_key == FGL_KEYVAL("ESC")
          THEN
-            IF P1[aln].kind IS NULL OR P1[aln].kind MATCHES "[ ]" THEN
-               ERROR mess[15]
-               NEXT FIELD kind
-            ELSE
-               IF P1[aln].kind NOT MATCHES "[FYNG]" 
+            IF iv_option1
+            THEN
+               IF (P1[aln].kind IS NOT NULL OR P1[aln].kind NOT MATCHES "[ ]")
+                  OR (P1[aln].mach_cn IS NOT NULL OR P1[aln].mach_cn NOT MATCHES "[ ]")
+                  OR (P1[aln].mach_en IS NOT NULL OR P1[aln].mach_en NOT MATCHES "[ ]")
+                  OR (P1[aln].machcode IS NOT NULL OR P1[aln].machcode NOT MATCHES "[ ]")
+                  OR (P1[aln].posno IS NOT NULL OR P1[aln].posno NOT MATCHES "[ ]" OR P1[aln].posno != 0)
+                  OR (P1[aln].hole IS NOT NULL OR P1[aln].hole NOT MATCHES "[ ]" OR P1[aln].hole != 0)
+                  OR (P1[aln].lossprs IS NOT NULL OR P1[aln].lossprs NOT MATCHES "[ ]" OR P1[aln].lossprs != 0.0)
+                  OR (P1[aln].losshr IS NOT NULL OR P1[aln].losshr NOT MATCHES "[ ]" OR P1[aln].losshr != 0.0)
+                  OR (P1[aln].lossgw IS NOT NULL OR P1[aln].lossgw NOT MATCHES "[ ]" OR P1[aln].lossgw != 0.0)
                THEN
-                  NEXT FIELD kind
-                  ERROR "Values are only 'F', 'Y', 'N' and 'G'!"
-               ELSE  
-                  IF P1[aln].kind MATCHES "[Y]" 
-                  THEN
-                     IF p1[aln].posno IS NULL OR P1[aln].posno MATCHES "[ ]" THEN
-                        ERROR mess[15]
-                        NEXT FIELD posno
-                     END IF
-                     IF p1[aln].hole IS NULL OR P1[aln].hole MATCHES "[ ]" THEN
-                        ERROR mess[15]
-                        NEXT FIELD hole
-                     END IF
+                  IF P1[aln].kind IS NULL OR P1[aln].kind MATCHES "[ ]" THEN
+                     ERROR mess[15]
+                     NEXT FIELD kind
                   ELSE
-                     ERROR ""
-                  END IF
-               END IF
-            END IF
-            IF P1[aln].machcode IS NULL OR P1[aln].machcode MATCHES "[ ]"  THEN
-               ERROR mess[15]
-               NEXT FIELD machcode
-            ELSE
-               IF (NOT iv_option) OR (iv_option AND (P2[aln].machcode != P1[aln].machcode OR PH1.pitems != PH.pitems OR PH1.dept != PH.dept))
-               THEN
-                  LET iv_cc = 0
-                  SELECT COUNT(*) INTO iv_cc FROM w213
-                  WHERE manuf = PH.manuf AND pitems = PH.pitems AND dept = PH.dept AND machcode = P1[aln].machcode
-                  IF iv_cc > 0 THEN
-                     ERROR mess[2]
-                     IF ((PH1.pitems != PH.pitems OR PH1.dept != PH.dept) AND iv_option) OR NOT iv_option
+                     IF P1[aln].kind NOT MATCHES "[FYNG]" 
                      THEN
-                        LET wk_goto = TRUE
-                        GOTO lblCallAdd100
-                     END IF
-                     IF P2[aln].machcode != P1[aln].machcode AND iv_option
-                     THEN 
-                        NEXT FIELD machcode
+                        NEXT FIELD kind
+                        ERROR "Values are only 'F', 'Y', 'N' and 'G'!"
+                     ELSE  
+                        IF P1[aln].kind MATCHES "[Y]" 
+                        THEN
+                           IF p1[aln].posno IS NULL OR P1[aln].posno MATCHES "[ ]" THEN
+                              ERROR mess[15]
+                              NEXT FIELD posno
+                           END IF
+                           IF p1[aln].hole IS NULL OR P1[aln].hole MATCHES "[ ]" THEN
+                              ERROR mess[15]
+                              NEXT FIELD hole
+                           END IF
+                        ELSE
+                           ERROR ""
+                        END IF
                      END IF
                   END IF
-               ELSE
-                  IF wk_goto THEN CALL add200(TRUE) END IF
+                  IF P1[aln].machcode IS NULL OR P1[aln].machcode MATCHES "[ ]"  THEN
+                     ERROR mess[15]
+                     NEXT FIELD machcode
+                  ELSE
+                     IF (NOT iv_option) OR (iv_option AND (P2[aln].machcode != P1[aln].machcode OR PH1.pitems != PH.pitems OR PH1.dept != PH.dept))
+                     THEN
+                        LET iv_cc = 0
+                        SELECT COUNT(*) INTO iv_cc FROM w213
+                        WHERE manuf = PH.manuf AND pitems = PH.pitems AND dept = PH.dept AND machcode = P1[aln].machcode
+                        IF iv_cc > 0 THEN
+                           ERROR mess[2]
+                           IF ((PH1.pitems != PH.pitems OR PH1.dept != PH.dept) AND iv_option) OR NOT iv_option
+                           THEN
+                              LET wk_goto = TRUE
+                              GOTO lblCallAdd100
+                           END IF
+                           IF P2[aln].machcode != P1[aln].machcode AND iv_option
+                           THEN 
+                              NEXT FIELD machcode
+                           END IF
+                        END IF
+                     ELSE
+                        IF wk_goto THEN CALL add200(TRUE, FALSE) END IF
+                     END IF
+                  END IF
+                  IF P1[aln].lossprs IS NULL OR P1[aln].lossprs MATCHES "[ ]"  THEN
+                     ERROR mess[15]
+                     NEXT FIELD lossprs
+                  ELSE
+                     ERROR P1[aln].lossprs
+                  END IF
+                  IF P1[aln].losshr IS NULL OR P1[aln].losshr MATCHES "[ ]"  THEN
+                     ERROR mess[15]
+                     NEXT FIELD losshr
+                  END IF
+                  IF P1[aln].lossgw IS NULL OR P1[aln].lossgw MATCHES "[ ]" THEN
+                     ERROR mess[15]
+                     NEXT FIELD lossgw
+                  END IF
                END IF
             END IF
-            IF P1[aln].lossprs IS NULL OR P1[aln].lossprs MATCHES "[ ]"  THEN
-               ERROR mess[15]
-               NEXT FIELD lossprs
+         ELSE
+            IF iv_option1 THEN
+               PROMPT "Do you really want to exit delete fucntion (y/Y for Yes, another for No)? " FOR wk_prompt
             ELSE
-               ERROR P1[aln].lossprs
+               PROMPT "Do you really want to cancle input (y/Y for Yes, another for No)? " FOR wk_prompt
             END IF
-            IF P1[aln].losshr IS NULL OR P1[aln].losshr MATCHES "[ ]"  THEN
-               ERROR mess[15]
-               NEXT FIELD losshr
-            END IF
-            IF P1[aln].lossgw IS NULL OR P1[aln].lossgw MATCHES "[ ]" THEN
-               ERROR mess[15]
-               NEXT FIELD lossgw
+            IF wk_prompt NOT MATCHES "[yY]"
+            THEN
+               CONTINUE INPUT
+            ELSE
+               IF iv_option1
+               THEN
+                  IF wk_recordDel THEN
+                     ERROR mess[53] CLIPPED, wk_recordDel USING "<<< & ",mess[41] CLIPPED SLEEP 1
+                     CALL reopen()
+                  END IF
+               END IF
             END IF
          END IF
    END INPUT
@@ -577,11 +656,10 @@ FUNCTION updfun()
    DEFINE wk_machcodecnt INTEGER
    DEFINE wk_duplicate INTEGER
    DEFINE wk_countUpdateSuccess INTEGER
-
-   DISPLAY "" AT 23, 1
-   DISPLAY "" AT 22, 1
+   DEFINE wk_countDel INTEGER
 
    LET wk_duplicate = 0
+   LET wk_countDel = 0
    LET wk_countUpdateSuccess = 0
 
    IF op_code = 'N' THEN
@@ -599,8 +677,8 @@ FUNCTION updfun()
    END IF
 
    CALL SET_COUNT(cc)
-
-   CALL add200(TRUE)
+   DISPLAY "If you prompt the row is empty, this row will be removed!" AT 21, 1
+   CALL add200(TRUE, FALSE)
    IF INT_FLAG THEN
       LET INT_FLAG = FALSE
       ERROR mess[07] CLIPPED
@@ -609,17 +687,35 @@ FUNCTION updfun()
 
    BEGIN WORK
    FOR cc1 = 1 TO max_ary
-      IF P1[cc1].kind IS NULL THEN
-         EXIT FOR
+      IF P2[cc1].kind IS NULL
+      THEN 
+         CONTINUE FOR 
+      ELSE
+       -- remove empty row
+         IF (P1[cc1].kind IS NULL OR P1[cc1].kind  MATCHES "[ ]")
+            AND (P1[cc1].mach_cn IS NULL OR P1[cc1].mach_cn  MATCHES "[ ]")
+            AND (P1[cc1].mach_en IS NULL OR P1[cc1].mach_en  MATCHES "[ ]")
+            AND (P1[cc1].machcode IS NULL OR P1[cc1].machcode  MATCHES "[ ]")
+            AND (P1[cc1].posno IS NULL OR P1[cc1].posno  MATCHES "[ ]" OR P1[cc1].lossprs != 0)
+            AND (P1[cc1].hole IS NULL OR P1[cc1].hole  MATCHES "[ ]" OR P1[cc1].hole != 0)
+            AND (P1[cc1].lossprs IS NULL OR P1[cc1].lossprs  MATCHES "[ ]" OR P1[cc1].lossprs != 0.0)
+            AND (P1[cc1].losshr IS NULL OR P1[cc1].losshr  MATCHES "[ ]" OR P1[cc1].losshr != 0.0)
+            AND (P1[cc1].lossgw IS NULL OR P1[cc1].lossgw  MATCHES "[ ]" OR P1[cc1].lossgw != 0.0)
+         THEN
+            DELETE FROM w213 WHERE ROWID = Wrowid[cc1]
+            LET wk_countDel = wk_countDel + 1 
+         END IF
+      -- 
       END IF
-      IF PH1.pitems != PH.pitems OR PH1.dept != PH.dept OR P2[cc1].machcode !=  P1[cc1].machcode OR P2[cc1].kind !=  P1[cc1].kind OR P2[cc1].mach_cn !=  P1[cc1].mach_cn OR P2[cc1].mach_en !=  P1[cc1].mach_en
-         OR P2[cc1].posno !=  P1[cc1].posno OR P2[cc1].hole !=  P1[cc1].hole OR P2[cc1].machcode !=  P1[cc1].machcode
-         OR P2[cc1].lossprs !=  P1[cc1].lossprs OR P2[cc1].losshr !=  P1[cc1].losshr OR P2[cc1].lossgw !=  P1[cc1].lossgw
+      IF PH1.pitems != PH.pitems OR PH1.dept != PH.dept OR P2[cc1].machcode !=  P1[cc1].machcode OR P2[cc1].kind !=  P1[cc1].kind OR P2[cc1].mach_cn !=  P1[cc1].mach_cn OR P2[cc1].mach_en !=  P1[cc1].mach_en OR P2[cc1].posno !=  P1[cc1].posno OR P2[cc1].hole !=  P1[cc1].hole OR P2[cc1].lossprs !=  P1[cc1].lossprs OR P2[cc1].losshr !=  P1[cc1].losshr OR P2[cc1].lossgw !=  P1[cc1].lossgw
       THEN
          IF P1[cc1].kind NOT MATCHES '[FYNG]' THEN CONTINUE FOR END IF
          LET wk_machcodecnt = 0
-         SELECT COUNT(*) INTO wk_machcodecnt FROM w213
-         WHERE manuf = PH.manuf AND pitems = PH.pitems AND dept = PH.dept AND machcode = P1[cc1].machcode
+         IF PH1.pitems != PH.pitems OR PH1.dept != PH.dept OR P2[cc1].machcode !=  P1[cc1].machcode
+         THEN
+            SELECT COUNT(*) INTO wk_machcodecnt FROM w213
+            WHERE manuf = PH.manuf AND pitems = PH.pitems AND dept = PH.dept AND machcode = P1[cc1].machcode
+         END IF
          IF wk_machcodecnt THEN
             LET wk_duplicate = wk_duplicate + 1
          ELSE
@@ -640,29 +736,42 @@ FUNCTION updfun()
    IF wk_countUpdateSuccess > 0 THEN
       IF wk_duplicate
       THEN 
-         ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success!", " To be Duplicated ", wk_duplicate USING "<<<<< & record." SLEEP 1
+         IF wk_countDel > 0 THEN
+            ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success!", " To be Duplicated ", wk_duplicate USING "<<<<< & record. To be removed ", wk_countDel USING "<<<<< & record." SLEEP 1
+         ELSE
+            ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success!", " To be Duplicated ", wk_duplicate USING "<<<<< & record." SLEEP 1
+         END IF
       ELSE
-         ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success!" SLEEP 1
+         IF wk_countDel > 0 THEN
+            ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success! To be removed ", wk_countDel USING "<<<<< & record." SLEEP 1
+         ELSE
+            ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success!" SLEEP 1
+         END IF
       END IF
-      CALL inqfun(FALSE) 
+      CALL reopen() 
    ELSE
       IF wk_duplicate
       THEN 
-         ERROR "Datas are unchanged! To be Duplicated ", wk_duplicate USING "<<<<< & record." SLEEP 1
+         IF wk_countDel > 0 THEN
+            ERROR "Datas are unchanged! To be Duplicated ", wk_duplicate USING "<<<<< & record. To be removed ", wk_countDel USING "<<<<< & record." SLEEP 1
+         ELSE
+            ERROR "Datas are unchanged! To be Duplicated ", wk_duplicate USING "<<<<< & record." SLEEP 1
+         END IF
+         CALL reopen()
       ELSE
-         ERROR "Datas are unchanged!" SLEEP 1
+         IF wk_countDel > 0 THEN
+            ERROR "Datas are unchanged!. To be removed ", wk_countDel USING "<<<<< & record." SLEEP 1
+            CALL reopen()
+         ELSE
+            ERROR "Datas are unchanged!" SLEEP 1
+         END IF
       END IF
    END IF
-   CALL reopen()
 END FUNCTION
 #----------------------------------------------------------------------
 FUNCTION pgfun(move)
    DEFINE move SMALLINT
    DEFINE wk_message CHAR(300)
-
-   DISPLAY "" AT 23, 1
-   DISPLAY "" AT 22, 1
-
    IF op_code = "N" THEN
       ERROR mess[16] CLIPPED
       RETURN
@@ -709,33 +818,32 @@ FUNCTION pgfun(move)
 END FUNCTION
 #-------------------------------------------------------------------------------
 FUNCTION delfun()
-   DISPLAY "" AT 23, 1
-   DISPLAY "" AT 22, 1
-
    IF op_code = "N" THEN
       ERROR mess[16] CLIPPED
       RETURN
    END IF
-   CALL ans() RETURNING ans1
-   IF ans1 MATCHES "[^Yy]" THEN
-      ERROR mess[8]
-      RETURN
-   END IF
-   LET cnt1 = 0
-   BEGIN WORK
-      FOR cc1 = 1 TO cc
-         DELETE FROM w213 WHERE ROWID = Wrowid[cc1]
-         IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
-            ERROR mess[63] CLIPPED
-            ROLLBACK WORK
-            RETURN
-         ELSE
-            LET cnt1 = cnt1 + 1
-         END IF
-      END FOR
-   COMMIT WORK
-   ERROR mess[53] CLIPPED, cnt1 USING "<<< & ",mess[41] CLIPPED
-   CALL reopen()
+   CALL SET_COUNT(cc)
+   CALL add200(TRUE, TRUE)
+   -- CALL ans() RETURNING ans1
+   -- IF ans1 MATCHES "[^Yy]" THEN
+   --    ERROR mess[8]
+   --    RETURN
+   -- END IF
+   -- LET cnt1 = 0
+   -- BEGIN WORK
+   --    FOR cc1 = 1 TO cc
+   --       DELETE FROM w213 WHERE ROWID = Wrowid[cc1]
+   --       IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
+   --          ERROR mess[63] CLIPPED
+   --          ROLLBACK WORK
+   --          RETURN
+   --       ELSE
+   --          LET cnt1 = cnt1 + 1
+   --       END IF
+   --    END FOR
+   -- COMMIT WORK
+   -- ERROR mess[53] CLIPPED, cnt1 USING "<<< & ",mess[41] CLIPPED
+   -- CALL reopen()
 END FUNCTION
 #----------------------------------------------------------------------
 FUNCTION reopen()
@@ -779,8 +887,6 @@ FUNCTION disfun()
    END IF
    DISPLAY "" AT 1, 1
    DISPLAY "" AT 2, 1
-   DISPLAY "" AT 23, 1
-   DISPLAY "" AT 22, 1
 
    DISPLAY mess[29] CLIPPED,mess[32] CLIPPED AT 1, 1
 
@@ -837,7 +943,6 @@ FUNCTION disfun()
    CALL SET_COUNT (cc)
    DISPLAY "" AT 1, 1
    DISPLAY "" AT 2, 1
-   DISPLAY "" AT 23, 1
    DISPLAY mess[29] CLIPPED,mess[32] CLIPPED AT 1, 1
    IF frmtyp ='1' THEN
       DISPLAY "共 ",cc USING "<<<#"," 筆 " AT 23, 1
@@ -885,9 +990,7 @@ FUNCTION prtfun()
    
    DISPLAY "" AT 1,1
    DISPLAY "" AT 2,1
-   LET offset1 =  80
-   DISPLAY "" AT 23, 1
-   DISPLAY "" AT 22, 1        
+   LET offset1 =  80    
    IF op_code = "N" THEN
       ERROR mess[16] CLIPPED  
       RETURN
@@ -1022,4 +1125,11 @@ END FUNCTION
 FUNCTION closeCursorStd()
    CLOSE std_curs
    LET wk_flagOpenCur2 = FALSE
+END FUNCTION
+
+FUNCTION clearLine()
+   DISPLAY "" AT 21, 1
+   DISPLAY "" AT 22, 1
+   DISPLAY "" AT 23, 1
+   DISPLAY "" AT 24, 1
 END FUNCTION
