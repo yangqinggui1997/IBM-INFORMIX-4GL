@@ -5,36 +5,39 @@
 # LIB   : w213, w214, w215, j02(779)
 # DATE  : 2020-11-21
 
+--> DEFINE some global variable, which is declared in kmgbl.4gl file 
 GLOBALS 'kmgbl.4gl'
+--<
+--> DEFINE header pointer point to fields on 
 DEFINE PH, PH1 RECORD
-        manuf     LIKE w214.manuf,  
-        manufna   CHAR(23), 
-        pitems    LIKE w214.pitems,     
-        pitemsna  CHAR(23),
-        errdat    LIKE w214.errdat,   
-        dept      LIKE w214.dept,  
-        deptna    CHAR(23),
-        errno     LIKE w214.errno,
-        remark    LIKE w214.remark,
-        code      LIKE w214.code,
-        codsc     LIKE j02.codsc    
+        manuf     LIKE w214.manuf,  -- manufacturer indentity 
+        manufna   CHAR(23), -- manufacturer name 
+        pitems    LIKE w214.pitems,     -- item indentity
+        pitemsna  CHAR(23), -- item name
+        errdat    LIKE w214.errdat,   -- Date of abnormal working hours
+        dept      LIKE w214.dept,  -- department iddentity
+        deptna    CHAR(23),  -- department name
+        errno     LIKE w214.errno, -- Abnormal working hours ticket number
+        remark    LIKE w214.remark, -- 
+        code      LIKE w214.code, -- Reason code
+        codsc     LIKE j02.codsc   -- Reason code name 
         END RECORD,
     P1,P2  ARRAY[99] OF RECORD
-         kind LIKE w213.mach_cn,
-         machcode LIKE w215.machcode,
-         machno LIKE  w215.machno, 
-         posno LIKE w215.machno, 
-         hole LIKE w215.hole, 
-         rmodel LIKE w215.rmodel, 
-         tolcls LIKE w215.tolcls, 
-         errhr LIKE w215.errhr, 
-         slosshole LIKE w215.slosshole,
-         slossgw LIKE w215.slossgw, 
-         slossprs LIKE w215.slossprs, 
-         press LIKE w215.press
+         kind LIKE w213.mach_cn, -- Calculate labor loss category
+         machcode LIKE w215.machcode, -- Machine code
+         machno LIKE  w215.machno,  -- Pipeline code
+         posno LIKE w215.machno, -- Number of stations
+         hole LIKE w215.hole, -- Number of holes
+         rmodel LIKE w215.rmodel, -- Body code
+         tolcls LIKE w215.tolcls, -- Tool code
+         errhr LIKE w215.errhr, -- Abnormal working hours
+         slosshole LIKE w215.slosshole, -- Total loss hole number
+         slossgw LIKE w215.slossgw, -- Total lost production weight
+         slossprs LIKE w215.slossprs, -- Double total loss
+         press LIKE w215.press -- Production Daily Calculation No Y/N
       END RECORD,
       P_errno  ARRAY[99] OF RECORD
-         errno LIKE w214.errno
+         errno LIKE w214.errno -- Abnormal working hours ticket number
       END RECORD,
       Wrowid  ARRAY[99] OF INTEGER   ,
       scr_ary      INTEGER,
@@ -582,9 +585,6 @@ FUNCTION add200(iv_option, iv_option1)
             DISPLAY P1[aln].kind TO SR[sln].kind ATTRIBUTE(REVERSE)
          END IF
       AFTER ROW  
-         -- LET wk_key = FGL_LASTKEY()
-         -- IF wk_key == FGL_KEYVAL("ACCEPT") OR wk_key == FGL_KEYVAL("ESC") OR wk_key == FGL_KEYVAL("TAB")
-         -- THEN
          IF NOT iv_option1 THEN
             IF (P1[aln].machcode IS NOT NULL OR P1[aln].machcode NOT MATCHES "[ ]")
                OR (P1[aln].machno IS NOT NULL OR P1[aln].machno NOT MATCHES "[ ]")
@@ -1025,12 +1025,9 @@ FUNCTION add200(iv_option, iv_option1)
                   DISPLAY P1[aln].press   TO SR[sln].press   ATTRIBUTE(REVERSE)
                END IF
             ELSE
-               IF iv_option1
-               THEN
-                  IF wk_recordDel THEN
-                     ERROR mess[53] CLIPPED, wk_recordDel USING "<<< & ",mess[41] CLIPPED SLEEP 1
-                     CALL reopen()
-                  END IF
+               IF wk_recordDel THEN
+                  ERROR mess[53] CLIPPED, wk_recordDel USING "<<< & ",mess[41] CLIPPED SLEEP 1
+                  CALL reopen()
                END IF
             END IF
          ELSE
@@ -1168,7 +1165,6 @@ FUNCTION updfun()
       ERROR mess[10] CLIPPED
       RETURN
    END IF
-   DISPLAY "If you prompt the row is empty, this row will be removed!" AT 23, 1
    OPTIONS INSERT KEY F13,
          DELETE KEY F14
 
@@ -1180,7 +1176,7 @@ FUNCTION updfun()
    END IF
 
    CALL SET_COUNT(cc)
-
+   DISPLAY "If you prompt the row is empty, this row will be removed!" AT 23, 1
    CALL add200(TRUE, FALSE)
    IF INT_FLAG THEN
       LET INT_FLAG = FALSE
@@ -1758,7 +1754,7 @@ FUNCTION closeCursorStd()
    LET wk_flagOpenCur2 = FALSE
 END FUNCTION
 
-FUNCTION get_no(iv_flag, iv_dept)
+FUNCTION get_no(iv_flag, iv_dept) -- Function for create errno code 
    DEFINE iv_flag CHAR(01)
    DEFINE iv_dept LIKE w213.dept
    DEFINE iv_number  CHAR(10)

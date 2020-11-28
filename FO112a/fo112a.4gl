@@ -5,43 +5,57 @@
 # LIB   : w213
 # DATE  : 2020-11-18
 
+--> DEFINE some global variable, which is declared in kmgbl.4gl file 
 GLOBALS 'kmgbl.4gl'
+--<
+--> DEFINE header pointer point to fields on 
 DEFINE PH, PH1 RECORD
-       manuf     LIKE w213.manuf,  
-       manufna   CHAR(23),      
-       pitems    LIKE w213.pitems,     
-       pitemsna  CHAR(23),   
-       dept      LIKE w213.dept,  
-       deptna    CHAR(23)        
+       manuf     LIKE w213.manuf, -- manufacturer indentity  
+       manufna   CHAR(23),      -- manufacturer name 
+       pitems    LIKE w213.pitems,     -- item indentity
+       pitemsna  CHAR(23),   -- item name
+       dept      LIKE w213.dept,   -- department iddentity
+       deptna    CHAR(23)        -- department name
        END RECORD,
+      PH2 ARRAY[99] OF RECORD
+         errno LIKE w215.errno
+      END RECORD,
+--<
+--> DEFINE array of pointer point to fields on table or list
        P1,P2  ARRAY[99] OF RECORD
-       kind     LIKE w213.kind,   
-       mach_cn  LIKE w213.mach_cn,      
-       mach_en  LIKE w213.mach_en, 
-       machcode LIKE w213.machcode,    
-       posno    LIKE w213.posno,      
-       hole     LIKE w213.hole,      
-       lossprs  LIKE w213.lossprs, 
-       losshr   LIKE w213.losshr,  
-       lossgw   LIKE w213.lossgw
+       kind     LIKE w213.kind,   -- kind 
+       mach_cn  LIKE w213.mach_cn,     -- machine name in chinese 
+       mach_en  LIKE w213.mach_en,  -- machine name in english
+       machcode LIKE w213.machcode,    -- machine code
+       posno    LIKE w213.posno,      -- Number of stations
+       hole     LIKE w213.hole,      -- Number of holes
+       lossprs  LIKE w213.lossprs,  -- Number of losses per hour
+       losshr   LIKE w213.losshr,  -- Lost time
+       lossgw   LIKE w213.lossgw -- Lost production weight per hour
        END RECORD,
-       Wrowid  ARRAY[99] OF INTEGER   ,
-       scr_ary      INTEGER,
-       wk_flagOpenCur1 SMALLINT,
-       wk_flagOpenCur2 SMALLINT
+--<
+       Wrowid  ARRAY[99] OF INTEGER   , -- Array of ROWID, which is used in delete or updated record
+       scr_ary      INTEGER, --max size of array that can contain records
+       wk_flagOpenCur1 SMALLINT, -- Flag is use to know header cursor is open
+       wk_flagOpenCur2 SMALLINT -- Flag is use to know cursor of table is open
 #-------------------------------------------------------------------------------
 FUNCTION mainfun()
    WHENEVER ERROR CALL errmsg
    LET max_ary = 99
    LET scr_ary = 5
+   --> Set mode access DATABASE, action after should be wait action before complete
    SET LOCK MODE TO WAIT
+   --< 
+   --> Open form
    LET Pfrm = Cfrm CLIPPED,"/fo112a"
    OPEN FORM fo112a FROM Pfrm
    DISPLAY FORM fo112a
+   --< 
    LET wk_flagOpenCur1 = FALSE
    LET wk_flagOpenCur2 = FALSE
    LET   op_code = "N"
 
+   --> Define menu
    IF frmtyp = '1'
    THEN
       MENU "功能"
@@ -130,29 +144,31 @@ FUNCTION mainfun()
                CALL showhelp(0114)
       END MENU
    END IF
-   CLOSE FORM fo112a
+   --< 
+   CLOSE FORM fo112a -- close form and end program
 END FUNCTION
 #----------------------------------------------------------------------
-FUNCTION inqfun(iv_option)
-   DEFINE iv_option SMALLINT
+FUNCTION inqfun(iv_option) -- function for search data
+   DEFINE iv_option SMALLINT -- variable is flag for inquire function, TRUE for input user, FALSE for where 1=1
    CLEAR FORM
 
    INITIALIZE PH.* TO NULL #Reset PH cursor for begining search
    IF iv_option
    THEN  
+   --> Build construct for search
       CONSTRUCT BY NAME wh_str ON pitems, dept
-         BEFORE CONSTRUCT
+         BEFORE CONSTRUCT -- The logic is execute before user input on any field on form
             LET PH.manuf = gv_manuf
-            LET PH.manufna  = cal_j02(7,PH.manuf)
-            DISPLAY BY NAME PH.manuf, PH.manufna
-         ON KEY(F5, CONTROL-W)
+            LET PH.manufna  = cal_j02(7,PH.manuf) -- Call function that is defined in another program to get manufacturer name
+            DISPLAY BY NAME PH.manuf, PH.manufna -- DISPLAY on screen
+         ON KEY(F5, CONTROL-W) -- Execute when user press these button.
                IF INFIELD(pitems) 
                THEN
                   CALL win_j02(620) RETURNING PH.pitems,PH.pitemsna
                   DISPLAY BY NAME PH.pitems, PH.pitemsna
                   NEXT FIELD dept
                END IF
-         AFTER FIELD pitems
+         AFTER FIELD pitems -- execute when curser out of field
             IF PH.pitems IS NOT NULL AND PH.pitems NOT MATCHES "[ ]" 
             THEN
                LET PH.pitemsna = cal_j02(620,PH.pitems)
@@ -164,7 +180,7 @@ FUNCTION inqfun(iv_option)
                CALL cal_n15("W",PH.manuf,PH.dept) RETURNING PH.deptna
                DISPLAY BY NAME PH.dept, PH.deptna
             END IF
-         AFTER CONSTRUCT
+         AFTER CONSTRUCT -- execute when user complete input by  press ESC OR ACCEPT button
             IF PH.pitems IS NOT NULL AND PH.pitems NOT MATCHES "[ ]" 
             THEN
                LET PH.pitemsna = cal_j02(620,PH.pitems)
@@ -176,6 +192,8 @@ FUNCTION inqfun(iv_option)
                DISPLAY BY NAME PH.dept, PH.deptna
             END IF
       END CONSTRUCT
+      --<
+      --> If any stuck during input construct, terminate search
       IF INT_FLAG 
       THEN
          LET INT_FLAG = FALSE
@@ -183,16 +201,21 @@ FUNCTION inqfun(iv_option)
          ERROR mess[6]
          RETURN
       END IF
+      --<
    ELSE
       LET wh_str = "1=1"
    END IF
    ------
+   --> Build seacrh info 
    LET qry_str = "SELECT UNIQUE a.manuf,'' manufna ,a.pitems,'' pitemsna ,a.dept,'' deptna ",
                   " FROM w213 a WHERE ",wh_str CLIPPED,
                   " AND a.manuf = '",gv_manuf,"'",
                   " ORDER BY 1"
+   --<
+   --> Prepare and Declare cursor for search
    PREPARE cnt_exe FROM qry_str
    DECLARE cnt_cur SCROLL CURSOR FOR cnt_exe
+   --<
    LET qry_str3 = "SELECT kind,mach_cn,mach_en,machcode,posno,hole,lossprs,losshr,lossgw,ROWID ",
                   " FROM w213",
                   " WHERE ", wh_str CLIPPED, " AND manuf = '", gv_manuf, "' AND pitems = ? AND dept = ?", 
@@ -200,22 +223,25 @@ FUNCTION inqfun(iv_option)
    PREPARE qry_exe FROM qry_str3
    DECLARE std_curs SCROLL CURSOR FOR qry_exe
 
-   CALL reopen() 
-   LET op_code = "Y"                   
+   CALL reopen()  -- Call this function to load data into table on screen at first point
+   LET op_code = "Y"  -- turn flag for search on                 
 END FUNCTION
 #----------------------------------------------------------------
-FUNCTION inq100(iv_phPosition)
-   DEFINE iv_phPosition INTEGER
+FUNCTION inq100(iv_phPosition) -- Function for retrieve data
+   DEFINE iv_phPosition INTEGER -- Position start retrive data
 
-   CALL readfun1(iv_phPosition)
+   CALL readfun1(iv_phPosition) -- Call this function to read and display data to fields on form
    
+   --> Initialize three pointer to null for begin fecth data to
    FOR cc = 1 TO max_ary
       INITIALIZE P1[cc].* TO NULL
       INITIALIZE P2[cc].* TO NULL
       INITIALIZE Wrowid[cc] TO NULL
    END FOR
+   -->
 
-   CALL openCursorStd()
+   CALL openCursorStd() -- open cursor
+   --> Fecth data from cursor to pointer
    FOR cc = 1 TO max_ary
       FETCH std_curs INTO P1[cc].*,Wrowid[cc]
       IF STATUS != 0 THEN
@@ -227,17 +253,18 @@ FUNCTION inq100(iv_phPosition)
       LET P2[cc].* = P1[cc].*
       LET PH1.* = PH.*
    END FOR
-   CALL closeCursorStd()
+   --<
+   CALL closeCursorStd() -- close cursor after using
 
-   LET cc = cc - 1
+   LET cc = cc - 1 -- count of record is fetched
    IF cc > scr_ary THEN
-      ERROR mess[14] CLIPPED
+      ERROR mess[14] CLIPPED -- count of record is greater than count of screen array
    ELSE
-      IF cc = 0 THEN ERROR mess[10] CLIPPED END IF
+      IF cc = 0 THEN ERROR mess[10] CLIPPED END IF -- no record is found
    END IF
 END FUNCTION
 #----------------------------------------------------------------
-FUNCTION readfun1(iv_cc)
+FUNCTION readfun1(iv_cc) -- Function for read and display data to fields on form
    DEFINE iv_cc INTEGER
 
    CALL openCursorCnt()
@@ -248,17 +275,16 @@ FUNCTION readfun1(iv_cc)
    LET PH.pitemsna = cal_j02(620,PH.pitems)  
    CALL cal_n15("W",PH.manuf,PH.dept) RETURNING PH.deptna
    
-   DISPLAY BY NAME PH.*
+   DISPLAY BY NAME PH.* -- Display all fields on fields on form
 END FUNCTION
 #----------------------------------------------------------------
-FUNCTION addfun()
-   DEFINE wk_machcodecnt INTEGER
-   DEFINE wk_duplicate INTEGER
-   DEFINE wk_countAddSuccess INTEGER
+FUNCTION addfun() -- Function for create new records
+   DEFINE wk_machcodecnt INTEGER -- variable determine whether duplicate record
+   DEFINE wk_duplicate INTEGER -- variable determine numbers of duplicate record
+   DEFINE wk_countAddSuccess INTEGER -- variable determine numbers of record is added successfull
 
    LET wk_duplicate = 0
    LET wk_countAddSuccess = 0
-   INITIALIZE PH.* TO NULL
 
    FOR cc = 1 TO max_ary
       INITIALIZE P1[cc].* TO NULL
@@ -267,16 +293,16 @@ FUNCTION addfun()
    CLEAR FORM
    ------
    INITIALIZE PH.* TO NULL
-   CALL add100(FALSE, FALSE, PH.*)
+   CALL add100(FALSE, FALSE, PH.*) -- Call this function to user input on fields on form, the first  and the second parameter for update record to asign old data of a header pointer to another pointer, this compare after user change any data on fields, the last parameter is value of pointer for asign 
    IF INT_FLAG THEN
       LET INT_FLAG = FALSE
       CLEAR FORM
-      ERROR mess[5] CLIPPED
+      ERROR mess[5] CLIPPED -- Cancel add new data
       RETURN
    END IF
    ------
 
-   CALL add200(FALSE, FALSE)
+   CALL add200(FALSE, FALSE) -- CALL this function to user input on fields of table on screen, the first parameter for update, the last parameter for delete
    IF INT_FLAG THEN
       LET INT_FLAG = FALSE
       CLEAR FORM
@@ -285,12 +311,13 @@ FUNCTION addfun()
    END IF
    ------
    ERROR mess[11] # proccessing...
+   --> add datas into table on database
    BEGIN WORK
    FOR cc = 1 TO max_ary
-      IF P1[cc].kind IS NULL THEN
-            EXIT FOR
-      END IF
-      IF P1[cc].kind NOT MATCHES '[FYNG]' THEN CONTINUE FOR END IF
+      IF P1[cc].kind IS NULL THEN -- exit add data if record is null
+         EXIT FOR
+      END IF 
+      IF P1[cc].kind NOT MATCHES '[FYNG]' THEN CONTINUE FOR END IF -- continue new loop if kind out of true values
       LET wk_machcodecnt = 0
       SELECT COUNT(*) INTO wk_machcodecnt FROM w213
       WHERE manuf = PH.manuf AND pitems = PH.pitems AND dept = PH.dept AND machcode = P1[cc].machcode
@@ -304,11 +331,12 @@ FUNCTION addfun()
             CLEAR FORM
             RETURN
          ELSE
-            LET wk_countAddSuccess = wk_countAddSuccess + 1
+            LET wk_countAddSuccess = wk_countAddSuccess + 1 -- increase number of record is added successfull
          END IF
       END IF
    END FOR
    COMMIT WORK
+   --<
    IF wk_countAddSuccess > 0 THEN
       IF wk_duplicate
       THEN 
@@ -327,9 +355,9 @@ FUNCTION addfun()
    END IF
 END FUNCTION
 #-------------------------------------------------------------------
-FUNCTION add100(iv_option1, iv_option2, iv_record)
+FUNCTION add100(iv_option1, iv_option2, iv_record) -- Function for user input fields on form, the first  and the second parameter for update record to asign old data of a header pointer to another pointer, this compare after user change any data on fields, the last parameter is value of pointer for asign 
    DEFINE iv_option1, iv_option2 SMALLINT
-   DEFINE wk_key SMALLINT
+   DEFINE wk_key SMALLINT -- the last key that user pressed
    DEFINE iv_record RECORD
       manuf     LIKE w213.manuf,  
       manufna   CHAR(23),      
@@ -339,15 +367,15 @@ FUNCTION add100(iv_option1, iv_option2, iv_record)
       deptna    CHAR(23)        
    END RECORD
 
-   OPTIONS INSERT KEY F13,
+   OPTIONS INSERT KEY F13, -- set option for user to press button on keyboard 
             DELETE KEY F14
    INPUT BY NAME PH.pitems, PH.dept
-      BEFORE INPUT
+      BEFORE INPUT -- execute before user input on any fileds on form
          IF iv_option1
          THEN
             LET PH.* = iv_record.*
             IF iv_option2 THEN
-               LET PH1.* = PH.*
+               LET PH1.* = PH.* -- save old value to compare if user change data
             END IF
             DISPLAY BY NAME PH.*
          ELSE
@@ -355,14 +383,14 @@ FUNCTION add100(iv_option1, iv_option2, iv_record)
             LET PH.manufna  = cal_j02(7,PH.manuf)
             DISPLAY BY NAME PH.*
          END IF
-      ON KEY(F5, CONTROL-W)
+      ON KEY(F5, CONTROL-W) 
             IF INFIELD(pitems) 
             THEN
                CALL win_j02(620) RETURNING PH.pitems,PH.pitemsna
                DISPLAY BY NAME PH.pitems, PH.pitemsna
                NEXT FIELD dept
             END IF
-      AFTER INPUT
+      AFTER INPUT -- execute when user complete input by  press ESC OR ACCEPT button
          LET wk_key = FGL_LASTKEY()
          IF wk_key == FGL_KEYVAL("ACCEPT") OR wk_key == FGL_KEYVAL("ESC")
          THEN
@@ -398,36 +426,35 @@ FUNCTION add100(iv_option1, iv_option2, iv_record)
             END IF
          END IF
    END INPUT
-
 END FUNCTION
 #-------------------------------------------------------------------------------
-FUNCTION add200(iv_option, iv_option1)
+FUNCTION add200(iv_option, iv_option1) -- Function for user input on fields on table on screen, the first parameter for update, the last parameter for delete
    DEFINE iv_option, iv_option1 SMALLINT
-   DEFINE wk_key SMALLINT
-   DEFINE iv_cc SMALLINT
-   DEFINE wk_goto SMALLINT
-   DEFINE wk_recordDel INTEGER
-   DEFINE wk_prompt CHAR(1)
+   DEFINE wk_key SMALLINT -- the last key that user pressed
+   DEFINE iv_cc SMALLINT -- variable save count of record was exists on database
+   DEFINE wk_goto SMALLINT -- variable determine if program is execute goto command
+   DEFINE wk_recordDel INTEGER -- variable determine count of record is null by input of user and these record will be removed
+   DEFINE wk_prompt CHAR(1) -- the key that user prompt
 
-   LET wk_goto = FALSE
+   LET wk_goto = FALSE -- initialize for begin
    LET wk_recordDel = 0
 
    INPUT ARRAY P1 WITHOUT DEFAULTS FROM SR.*
-      BEFORE ROW
-         LET aln = ARR_CURR()
-         LET sln = SCR_LINE()
-         DISPLAY P1[aln].* TO SR[sln].* ATTRIBUTE(REVERSE)
+      BEFORE ROW -- the logic execute before user move cursor to new row
+         LET aln = ARR_CURR() -- get position of array record
+         LET sln = SCR_LINE() -- get position of screen array
+         DISPLAY P1[aln].* TO SR[sln].* ATTRIBUTE(REVERSE) -- Display array record into screen array
          IF frmtyp ='1' THEN
             DISPLAY "本行是第 ", aln USING "<<#"," 行" AT 22, 1
          ELSE
             DISPLAY "This row is ", aln USING "<<#"," row" AT 22, 1
          END IF
-      BEFORE FIELD kind
+      BEFORE FIELD kind -- The logic execute before cursor to this field
          ERROR "Values are only 'F', 'Y', 'N' and 'G'!"
-      ON KEY (CONTROL-Z)
-         IF iv_option1
+      ON KEY (CONTROL-Z) -- press button to come back fields on form
+         IF NOT iv_option1
          THEN
-            LABEL lblCallAdd100:
+            LABEL lblCallAdd100: -- input again if duplication happen
             CALL add100(TRUE, FALSE, PH.*)
             IF INT_FLAG THEN
                LET INT_FLAG = FALSE
@@ -436,26 +463,28 @@ FUNCTION add200(iv_option, iv_option1)
                RETURN
             END IF
          END IF
-      ON KEY (CONTROL-O)
+      ON KEY (CONTROL-O) -- press this button to delete present row
          IF iv_option1
          THEN
             PROMPT "Do you really want to remove this record (y/Y for Yes, another for No)? " FOR wk_prompt
             IF wk_prompt MATCHES "[yY]"
             THEN
-               INITIALIZE P1[aln].* TO NULL
-               DISPLAY P1[aln].* TO SR[sln].* ATTRIBUTE(REVERSE)
                BEGIN WORK
+                  CALL delRelatedData(aln)
                   DELETE FROM w213 WHERE ROWID = Wrowid[aln]
                   IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
                      ERROR mess[63] CLIPPED
                      ROLLBACK WORK
                   END IF 
-                  LET wk_recordDel = wk_recordDel + 1
+                  LET wk_recordDel = wk_recordDel + 1 -- increase number of record is removed
                   ERROR mess[60] CLIPPED
                COMMIT WORK
+               INITIALIZE P1[aln].* TO NULL
+               DISPLAY P1[aln].* TO SR[sln].* ATTRIBUTE(REVERSE) -- Display row is removed to blank 
+               EXIT INPUT
             END IF
          END IF
-      ON KEY (CONTROL-M)
+      ON KEY (CONTROL-M) -- press button to delete all row on present table screen
          IF iv_option1
          THEN
             PROMPT "Do you really want to remove all record (y/Y for Yes, another for No)? " FOR wk_prompt
@@ -464,6 +493,7 @@ FUNCTION add200(iv_option, iv_option1)
                LET cnt1 = 0
                BEGIN WORK
                   FOR cc1 = 1 TO cc
+                     CALL delRelatedData(cc1)
                      DELETE FROM w213 WHERE ROWID = Wrowid[cc1]
                      IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
                         ERROR mess[63] CLIPPED
@@ -473,11 +503,12 @@ FUNCTION add200(iv_option, iv_option1)
                   END FOR
                COMMIT WORK
                ERROR mess[53] CLIPPED, cnt1 USING "<<< & ",mess[41] CLIPPED
-               CALL reopen()
-               EXIT INPUT
+               CALL reopen() -- Call this to reload data
+               EXIT INPUT 
             END IF
          END IF
-      AFTER ROW
+      AFTER ROW -- The logic execute after cursor out of row
+         IF NOT iv_option1 THEN
             IF (P1[aln].kind IS NOT NULL OR P1[aln].kind NOT MATCHES "[ ]")
                OR (P1[aln].mach_cn IS NOT NULL OR P1[aln].mach_cn NOT MATCHES "[ ]")
                OR (P1[aln].mach_en IS NOT NULL OR P1[aln].mach_en NOT MATCHES "[ ]")
@@ -487,7 +518,7 @@ FUNCTION add200(iv_option, iv_option1)
                OR (P1[aln].lossprs IS NOT NULL OR P1[aln].lossprs NOT MATCHES "[ ]" OR P1[aln].lossprs != 0.0)
                OR (P1[aln].losshr IS NOT NULL OR P1[aln].losshr NOT MATCHES "[ ]" OR P1[aln].losshr != 0.0)
                OR (P1[aln].lossgw IS NOT NULL OR P1[aln].lossgw NOT MATCHES "[ ]" OR P1[aln].lossgw != 0.0)
-            THEN 
+            THEN  -- check if has any change data from user
                IF P1[aln].kind IS NULL OR P1[aln].kind MATCHES "[ ]" THEN
                   ERROR mess[15]
                   NEXT FIELD kind
@@ -549,12 +580,13 @@ FUNCTION add200(iv_option, iv_option1)
                   ERROR mess[15]
                   NEXT FIELD lossgw
                END IF
+            END IF
          END IF
-      AFTER INPUT
+      AFTER INPUT -- The logic execute after user complete input
          LET wk_key = FGL_LASTKEY()
          IF wk_key == FGL_KEYVAL("ACCEPT") OR wk_key == FGL_KEYVAL("ESC")
          THEN
-            IF iv_option1
+            IF NOT iv_option1
             THEN
                IF (P1[aln].kind IS NOT NULL OR P1[aln].kind NOT MATCHES "[ ]")
                   OR (P1[aln].mach_cn IS NOT NULL OR P1[aln].mach_cn NOT MATCHES "[ ]")
@@ -618,8 +650,6 @@ FUNCTION add200(iv_option, iv_option1)
                   IF P1[aln].lossprs IS NULL OR P1[aln].lossprs MATCHES "[ ]"  THEN
                      ERROR mess[15]
                      NEXT FIELD lossprs
-                  ELSE
-                     ERROR P1[aln].lossprs
                   END IF
                   IF P1[aln].losshr IS NULL OR P1[aln].losshr MATCHES "[ ]"  THEN
                      ERROR mess[15]
@@ -630,9 +660,14 @@ FUNCTION add200(iv_option, iv_option1)
                      NEXT FIELD lossgw
                   END IF
                END IF
+            ELSE
+               IF wk_recordDel THEN
+                  ERROR mess[53] CLIPPED, wk_recordDel USING "<<< & ",mess[41] CLIPPED SLEEP 1
+                  CALL reopen()
+               END IF
             END IF
          ELSE
-            IF iv_option1 THEN
+            IF iv_option1 THEN -- TRUE, prompt for delete. FALSE, prompt for add and update.
                PROMPT "Do you really want to exit delete fucntion (y/Y for Yes, another for No)? " FOR wk_prompt
             ELSE
                PROMPT "Do you really want to cancle input (y/Y for Yes, another for No)? " FOR wk_prompt
@@ -652,17 +687,18 @@ FUNCTION add200(iv_option, iv_option1)
          END IF
    END INPUT
 END FUNCTION
-FUNCTION updfun()
-   DEFINE wk_machcodecnt INTEGER
-   DEFINE wk_duplicate INTEGER
-   DEFINE wk_countUpdateSuccess INTEGER
-   DEFINE wk_countDel INTEGER
+#-------------------------------------------------------------------------------
+FUNCTION updfun() -- Function for update
+   DEFINE wk_machcodecnt INTEGER -- variable determine whether duplicate record
+   DEFINE wk_duplicate INTEGER -- variable determine numbers of duplicate record
+   DEFINE wk_countUpdateSuccess INTEGER -- variable determine numbers of record is added successfull
+   DEFINE wk_countDel INTEGER -- variable determine count of record is null by input of user and these record will be removed
 
-   LET wk_duplicate = 0
+   LET wk_duplicate = 0 
    LET wk_countDel = 0
    LET wk_countUpdateSuccess = 0
 
-   IF op_code = 'N' THEN
+   IF op_code = 'N' THEN -- user don't inquire data yet, terminate update
       ERROR mess[16] CLIPPED
       RETURN
    END IF
@@ -676,7 +712,7 @@ FUNCTION updfun()
       RETURN
    END IF
 
-   CALL SET_COUNT(cc)
+   CALL SET_COUNT(cc) -- set max of record that user can input
    DISPLAY "If you prompt the row is empty, this row will be removed!" AT 21, 1
    CALL add200(TRUE, FALSE)
    IF INT_FLAG THEN
@@ -705,10 +741,11 @@ FUNCTION updfun()
             DELETE FROM w213 WHERE ROWID = Wrowid[cc1]
             LET wk_countDel = wk_countDel + 1 
          END IF
-      -- 
+      --  
       END IF
       IF PH1.pitems != PH.pitems OR PH1.dept != PH.dept OR P2[cc1].machcode !=  P1[cc1].machcode OR P2[cc1].kind !=  P1[cc1].kind OR P2[cc1].mach_cn !=  P1[cc1].mach_cn OR P2[cc1].mach_en !=  P1[cc1].mach_en OR P2[cc1].posno !=  P1[cc1].posno OR P2[cc1].hole !=  P1[cc1].hole OR P2[cc1].lossprs !=  P1[cc1].lossprs OR P2[cc1].losshr !=  P1[cc1].losshr OR P2[cc1].lossgw !=  P1[cc1].lossgw
       THEN
+         
          IF P1[cc1].kind NOT MATCHES '[FYNG]' THEN CONTINUE FOR END IF
          LET wk_machcodecnt = 0
          IF PH1.pitems != PH.pitems OR PH1.dept != PH.dept OR P2[cc1].machcode !=  P1[cc1].machcode
@@ -716,17 +753,22 @@ FUNCTION updfun()
             SELECT COUNT(*) INTO wk_machcodecnt FROM w213
             WHERE manuf = PH.manuf AND pitems = PH.pitems AND dept = PH.dept AND machcode = P1[cc1].machcode
          END IF
+          
          IF wk_machcodecnt THEN
             LET wk_duplicate = wk_duplicate + 1
          ELSE
             UPDATE w213 SET (pitems, dept, machcode, kind,mach_cn,mach_en,posno,hole,lossprs,losshr,lossgw,upusr,upday)
                         = (PH.pitems, PH.dept, P1[cc1].machcode, P1[cc1].kind, P1[cc1].mach_cn, P1[cc1].mach_en, P1[cc1].posno, P1[cc1].hole, P1[cc1].lossprs, P1[cc1].losshr, P1[cc1].lossgw,login_usr, CURRENT YEAR TO SECOND)
-            WHERE ROWID = Wrowid[cc1]
+            WHERE manuf = PH1.manuf AND pitems = PH1.pitems AND dept = PH1.dept AND machcode = P2[cc1].machcode
             IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
                ROLLBACK WORK
                ERROR mess[04] CLIPPED
                RETURN
             ELSE
+               IF P2[cc1].machcode !=  P1[cc1].machcode OR P2[cc1].kind !=  P1[cc1].kind OR PH1.pitems != PH.pitems OR PH1.dept != PH.dept
+               THEN
+                  CALL updateRelatedData(cc1) -- Call this function to update data on relate table
+               END IF 
                LET wk_countUpdateSuccess = wk_countUpdateSuccess + 1
             END IF
          END IF
@@ -736,7 +778,7 @@ FUNCTION updfun()
    IF wk_countUpdateSuccess > 0 THEN
       IF wk_duplicate
       THEN 
-         IF wk_countDel > 0 THEN
+      IF wk_countDel > 0 THEN
             ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success!", " To be Duplicated ", wk_duplicate USING "<<<<< & record. To be removed ", wk_countDel USING "<<<<< & record." SLEEP 1
          ELSE
             ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success!", " To be Duplicated ", wk_duplicate USING "<<<<< & record." SLEEP 1
@@ -759,8 +801,8 @@ FUNCTION updfun()
          END IF
          CALL reopen()
       ELSE
-         IF wk_countDel > 0 THEN
-            ERROR "Datas are unchanged!. To be removed ", wk_countDel USING "<<<<< & record." SLEEP 1
+      IF wk_countDel > 0 THEN
+         ERROR "Datas are unchanged!. To be removed ", wk_countDel USING "<<<<< & record." SLEEP 1
             CALL reopen()
          ELSE
             ERROR "Datas are unchanged!" SLEEP 1
@@ -769,33 +811,33 @@ FUNCTION updfun()
    END IF
 END FUNCTION
 #----------------------------------------------------------------------
-FUNCTION pgfun(move)
-   DEFINE move SMALLINT
-   DEFINE wk_message CHAR(300)
+FUNCTION pgfun(move) -- Function for move to new page
+   DEFINE move SMALLINT -- variable determine if user want to move to next page or previous page. TRUE for next and FALSE for previous 
+   DEFINE wk_message CHAR(300) -- variable use for store message to display
    IF op_code = "N" THEN
       ERROR mess[16] CLIPPED
       RETURN
    END IF
-   IF move THEN
+   IF move THEN -- TRUE for next
       LET cnt = cnt + 1
-      IF cnt >= allcnt 
+      IF cnt >= allcnt -- the present position of cursor is greater than or equal max of position
       THEN 
          IF cnt > allcnt THEN 
-            LET cnt = 1 
-            LET wk_message = mess[12]
+            LET cnt = 1 -- reset into 1 if greater, scroll for next
+            LET wk_message = mess[12] -- first page
          ELSE
-            LET wk_message = mess[13]
+            LET wk_message = mess[13] -- last page
          END IF
       END IF
       CALL openCursorCnt()
-      FETCH ABSOLUTE cnt cnt_cur INTO PH.*
+      FETCH ABSOLUTE cnt cnt_cur INTO PH.* -- fetch present cursor to header pointer
       CALL closeCursorCnt()
    ELSE
       LET cnt = cnt - 1
-      IF cnt <= 1
+      IF cnt <= 1 -- the present position of cursor is less than or equal max of position
       THEN 
          IF cnt < 1 THEN 
-            LET cnt = allcnt 
+            LET cnt = allcnt -- asign for max position, scroll for previous
             LET wk_message = mess[13]
          ELSE
             LET wk_message = mess[12]
@@ -806,8 +848,8 @@ FUNCTION pgfun(move)
       CALL closeCursorCnt()
    END IF
    CLEAR FORM #Reset all field include input array
-   ERROR wk_message CLIPPED
-   CALL inq100(cnt)
+   ERROR wk_message CLIPPED -- DISPLAY messasge as error,  but this isn't error
+   CALL inq100(cnt) -- Call this function to inquire at present position
    IF frmtyp ='1' THEN
       DISPLAY "總頁數 : ",allcnt USING "<<<<#",
               "  顯示第 ",cnt USING "<<<<#"," 頁 " AT 23,1
@@ -817,13 +859,13 @@ FUNCTION pgfun(move)
    END IF           	           
 END FUNCTION
 #-------------------------------------------------------------------------------
-FUNCTION delfun()
+FUNCTION delfun() -- Function for delete
    IF op_code = "N" THEN
       ERROR mess[16] CLIPPED
       RETURN
    END IF
-   CALL SET_COUNT(cc)
-   CALL add200(TRUE, TRUE)
+   CALL SET_COUNT(cc) -- set max of record that user can input
+   CALL add200(TRUE, TRUE) 
    -- CALL ans() RETURNING ans1
    -- IF ans1 MATCHES "[^Yy]" THEN
    --    ERROR mess[8]
@@ -846,7 +888,75 @@ FUNCTION delfun()
    -- CALL reopen()
 END FUNCTION
 #----------------------------------------------------------------------
-FUNCTION reopen()
+FUNCTION delRelatedData(iv_index) -- Function for delete data on tables that reference to w213 table
+   DEFINE iv_index INTEGER
+   DEFINE wk_cc1 INTEGER
+   DEFINE wk_machcode LIKE w213.machcode
+   LET qry_str = "SELECT a.errno FROM w215 AS a JOIN  w214 AS b ON a.errno = b.errno WHERE b.manuf = ? AND b.pitems = ? AND b.dept = ? AND a.machcode = ? AND a.kind = ?"
+
+   PREPARE cnt_exe1 FROM qry_str
+   DECLARE std_curs1 SCROLL CURSOR FOR cnt_exe1
+
+   LET wk_machcode = P1[iv_index].machcode CLIPPED
+   OPEN std_curs1 USING PH.manuf, PH.pitems, PH.dept, wk_machcode, P1[iv_index].kind
+
+   FOR wk_cc1 = 1 TO max_ary
+      INITIALIZE PH2[wk_cc1].* TO NULL 
+   END FOR
+   FOR wk_cc1 = 1 TO max_ary
+      FETCH std_curs1 INTO PH2[wk_cc1].* 
+      IF STATUS != 0 THEN
+         EXIT FOR
+      END IF
+      DELETE FROM w215 WHERE errno = PH2[wk_cc1].errno
+      IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
+         ERROR mess[63] CLIPPED
+         ROLLBACK WORK
+      END IF 
+      DELETE FROM w214 WHERE errno = PH2[wk_cc1].errno
+      IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
+         ERROR mess[63] CLIPPED
+         ROLLBACK WORK
+      END IF 
+   END FOR
+   CLOSE std_curs1
+END FUNCTION
+#----------------------------------------------------------------------
+FUNCTION updateRelatedData(iv_index) -- Function for update data on tables that reference to w213 table
+   DEFINE iv_index INTEGER
+   DEFINE wk_cc1 INTEGER
+   DEFINE wk_machcode LIKE w213.machcode
+   LET qry_str = "SELECT a.errno FROM w215 AS a JOIN  w214 AS b ON a.errno = b.errno WHERE b.manuf = ? AND b.pitems = ? AND b.dept = ? AND a.machcode = ? AND a.kind = ?"
+
+   PREPARE cnt_exe2 FROM qry_str
+   DECLARE std_curs2 SCROLL CURSOR FOR cnt_exe2
+
+   LET wk_machcode = P2[iv_index].machcode CLIPPED
+   OPEN std_curs2 USING PH.manuf, PH1.pitems, PH1.dept, wk_machcode, P2[iv_index].kind
+
+   FOR wk_cc1 = 1 TO max_ary
+      INITIALIZE PH2[wk_cc1].* TO NULL 
+   END FOR
+   FOR wk_cc1 = 1 TO max_ary
+      FETCH std_curs2 INTO PH2[wk_cc1].* 
+      IF STATUS != 0 THEN
+         EXIT FOR
+      END IF
+      UPDATE w215 SET (machcode, kind) = (P1[iv_index].machcode, P1[iv_index].kind) WHERE errno = PH2[wk_cc1].errno
+      IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
+         ERROR mess[63] CLIPPED
+         ROLLBACK WORK
+      END IF 
+      UPDATE w214 SET (pitems, dept) = (PH.pitems, PH.dept) WHERE errno = PH2[wk_cc1].errno
+      IF SQLCA.SQLERRD[3] = 0 AND STATUS != 0 THEN
+         ERROR mess[63] CLIPPED
+         ROLLBACK WORK
+      END IF 
+   END FOR
+   CLOSE std_curs2
+END FUNCTION
+#----------------------------------------------------------------------
+FUNCTION reopen() -- Function for reload data
    LET cnt = 1
    LET allcnt = 1
 
@@ -876,11 +986,11 @@ FUNCTION reopen()
               "  顯示第 ",cnt USING "<<<<#"," 頁 " AT 23,1
       END IF
       ERROR mess[12] CLIPPED SLEEP 1
-      CALL inq100(cnt)
+      CALL inq100(cnt) -- call this function to inquire at present position.
    END IF
 END FUNCTION
 #----------------------------------------------------------------------
-FUNCTION disfun()
+FUNCTION disfun() -- FUNCTION for user to show all row if numbers of record is greater than size of screen array 
    IF op_code = "N" THEN
       ERROR mess[16] CLIPPED
       RETURN
@@ -898,6 +1008,7 @@ FUNCTION disfun()
          EXIT WHILE
       END IF
       LET cc = cc + 1
+      --> If number of records is greater than max size of array of record, confirm if user want to display
       IF cc > max_ary THEN
          ERROR mess[18] CLIPPED,max_ary USING "<<< #"
          LET cc = cc - 1
@@ -932,6 +1043,7 @@ FUNCTION disfun()
             RETURN
          END IF
       END IF
+      --<
    END WHILE
    CALL closeCursorStd()
 
@@ -952,13 +1064,13 @@ FUNCTION disfun()
    DISPLAY ARRAY P1 TO SR.*
 END FUNCTION
 #---------------------------------------------------------------------
-FUNCTION curfun()
+FUNCTION curfun() -- Function for reset flag of search data
    IF op_code = "Y" THEN
       LET op_code = "N"
    END IF
 END FUNCTION
-#######################################################
-FUNCTION prtfun()
+#---------------------------------------------------------------------
+FUNCTION prtfun() -- Function for export report
    DEFINE P RECORD
       manufna   CHAR(23),
       pitemsna  CHAR(23),
@@ -980,13 +1092,7 @@ FUNCTION prtfun()
       lossgw    LIKE w213.lossgw
    END RECORD 
 
-   DEFINE iv_storna CHAR(20)	
    DEFINE qry_str4   CHAR(500)
-   DEFINE wd_qty     LIKE w202.qty
-   DEFINE wd_seq     LIKE w200.seq
-   DEFINE wk_week    SMALLINT
-   DEFINE  iv_day    DATE
-   DEFINE  ir_day    DATE
    
    DISPLAY "" AT 1,1
    DISPLAY "" AT 2,1
@@ -997,29 +1103,31 @@ FUNCTION prtfun()
    END IF
    DISPLAY mess[11] CLIPPED AT 24 , 1 ATTRIBUTE(REVERSE)
 
-   CALL reptol()
-   SET ISOLATION TO DIRTY READ
+   CALL reptol() -- Call this function to show options for user export data
+   SET ISOLATION TO DIRTY READ -- set option for read data from database
    
    LET cc = 0
-   LET wd_seq = 0  
    LET qry_str4 = "SELECT manuf,pitems,dept,machcode, kind,mach_cn,mach_en,posno,hole, lossprs,losshr,lossgw ",
                   " FROM w213",
                   " WHERE manuf = '",gv_manuf,"' AND ", wh_str CLIPPED	
    PREPARE qry_exe4 FROM qry_str4
    DECLARE std_cur4 CURSOR FOR qry_exe4 
                         
-   START REPORT fo112av TO rep_naw
+   START REPORT fo112av TO rep_naw -- Declare and start report
    FOREACH std_cur4 INTO D1.*
-   
       IF INT_FLAG = TRUE THEN
          LET INT_FLAG = FALSE
          ERROR mess[47] CLIPPED
          EXIT FOREACH
       END IF
+
+      --> get some information need for output report  
       LET P.manufna  = cal_j02(7,D1.manuf)  
       LET P.pitemsna = cal_j02(620,D1.pitems)  
       CALL cal_n15("W",D1.manuf,D1.dept) RETURNING P.deptna    
-      OUTPUT TO REPORT fo112av(P.*, D1.*)  
+      --< 
+
+      OUTPUT TO REPORT fo112av(P.*, D1.*) -- Call report and output it  
       LET cc=cc+1
       IF frmtyp = "1" THEN
          DISPLAY "筆數 : ",cc USING "<<<#" AT 22,1
@@ -1029,7 +1137,7 @@ FUNCTION prtfun()
    END FOREACH
    FINISH REPORT fo112av
    ERROR ""
-   IF cc >=0 THEN
+   IF cc >= 0 THEN
       CALL Cprint(rep_na,"Y")  
    ELSE
       DISPLAY "Rows :      " AT 22,1
@@ -1037,7 +1145,7 @@ FUNCTION prtfun()
    END IF
 END FUNCTION
 #------------------------------------------------------------------------------
-REPORT fo112av(P, R)
+REPORT fo112av(P, R) -- define report
    DEFINE Head_B    CHAR(30)
    DEFINE IsEnd     SMALLINT
    DEFINE iv_qty    DECIMAL(9,1)
@@ -1099,7 +1207,7 @@ REPORT fo112av(P, R)
             LET IsEnd = TRUE
 END REPORT
 
-FUNCTION openCursorCnt()
+FUNCTION openCursorCnt() -- function for open header cursor
    IF wk_flagOpenCur1
    THEN
       CLOSE cnt_cur
@@ -1108,12 +1216,12 @@ FUNCTION openCursorCnt()
    LET wk_flagOpenCur1 = TRUE
 END FUNCTION
 
-FUNCTION closeCursorCnt()
+FUNCTION closeCursorCnt() -- function for close header cursor
    CLOSE cnt_cur
    LET wk_flagOpenCur1 = FALSE
 END FUNCTION
 
-FUNCTION openCursorStd()
+FUNCTION openCursorStd() -- function for open cursor of table
    IF wk_flagOpenCur2
    THEN
       CLOSE std_curs
@@ -1122,12 +1230,12 @@ FUNCTION openCursorStd()
    LET wk_flagOpenCur2 = TRUE
 END FUNCTION
 
-FUNCTION closeCursorStd()
+FUNCTION closeCursorStd() -- function for close cursor of table
    CLOSE std_curs
    LET wk_flagOpenCur2 = FALSE
 END FUNCTION
 
-FUNCTION clearLine()
+FUNCTION clearLine() -- function for clear lines use for display message
    DISPLAY "" AT 21, 1
    DISPLAY "" AT 22, 1
    DISPLAY "" AT 23, 1
