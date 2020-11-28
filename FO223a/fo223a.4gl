@@ -432,7 +432,11 @@ FUNCTION add100(iv_option1, iv_option2, iv_record)
                CALL add200(TRUE, FALSE)
             END IF 
          ELSE
-            PROMPT "Do you really want to cancle input (y/Y for Yes, another for No)? " FOR wk_prompt
+            IF frmtyp = "2" THEN
+               PROMPT "Do you really want to cancle input (y/Y for Yes, another for No)? " FOR wk_prompt
+            ELSE  
+               PROMPT "您是否真的要取消輸入 (y/Y 為是, 另一個為no)? " FOR wk_prompt
+            END IF
             IF wk_prompt NOT MATCHES "[yY]"
             THEN
                CONTINUE INPUT
@@ -483,13 +487,21 @@ FUNCTION add200(iv_option, iv_option1)
             DISPLAY BY NAME P_errno[aln].*
          END IF
          IF iv_option1 
-         THEN 
-            DISPLAY "Press CONTROL-O to delete present record, CONTROL-N to delete on record." AT 21,1
+         THEN
+            IF frmtyp = "2" THEN
+               DISPLAY "Press CONTROL-O to delete present record, CONTROL-N to delete on record." AT 21,1
+            ELSE
+               DISPLAY "按CONTROL-O刪除當前記錄，按CONTROL-N刪除記錄." AT 21,1
+            END IF
          END IF
       BEFORE FIELD machcode
          IF NOT iv_option1
          THEN
-            ERROR "Press CONTROL-W to show options."
+            IF frmtyp = "2" THEN
+               ERROR "Press CONTROL-W to show options."
+            ELSE
+               ERROR "按CONTROL-W顯示選項."
+            END IF
          END IF
       BEFORE FIELD press
          IF NOT iv_option1
@@ -510,7 +522,11 @@ FUNCTION add200(iv_option, iv_option1)
       ON KEY (CONTROL-O)
          IF iv_option1
          THEN
-            PROMPT "Do you really want to remove this record (y/Y for Yes, another for No)? " FOR wk_prompt
+            IF frmtyp = "2" THEN
+               PROMPT "Do you really want to remove this record (y/Y for Yes, another for No)? " FOR wk_prompt
+            ELSE
+               PROMPT "您是否確實要刪除此記錄 (y / y為是, 另一個為no_)? " FOR wk_prompt
+            END IF
             IF wk_prompt MATCHES "[yY]"
             THEN
                INITIALIZE P1[aln].* TO NULL
@@ -529,7 +545,11 @@ FUNCTION add200(iv_option, iv_option1)
       ON KEY (CONTROL-M)
          IF iv_option1
          THEN
-            PROMPT "Do you really want to remove all record (y/Y for Yes, another for No)? " FOR wk_prompt
+            IF frmtyp = "2" THEN
+               PROMPT "Do you really want to remove all record (y/Y for Yes, another for No)? " FOR wk_prompt
+            ELSE
+               PROMPT "您是否真的要刪除所有記錄（y / y為是, 另一個為no）? " FOR wk_prompt
+            END IF
             IF wk_prompt MATCHES "[yY]"
             THEN
                LET cnt1 = 0
@@ -1032,9 +1052,17 @@ FUNCTION add200(iv_option, iv_option1)
             END IF
          ELSE
             IF iv_option1 THEN
-               PROMPT "Do you really want to exit delete fucntion (y/Y for Yes, another for No)? " FOR wk_prompt
+               IF frmtyp = "2" THEN
+                  PROMPT "Do you really want to exit delete fucntion (y/Y for Yes, another for No)? " FOR wk_prompt
+               ELSE
+                  PROMPT "您是否真的要退出刪除功能 (y / y表示是, 另一個表示否)? " FOR wk_prompt
+               END IF
             ELSE
-               PROMPT "Do you really want to cancle input (y/Y for Yes, another for No)? " FOR wk_prompt
+               IF frmtyp = "2" THEN
+                  PROMPT "Do you really want to cancle input (y/Y for Yes, another for No)? " FOR wk_prompt
+               ELSE
+                  PROMPT "您是否真的要取消輸入 (y / y表示是, 另一個表示否)? " FOR wk_prompt
+               END IF
             END IF
             IF wk_prompt NOT MATCHES "[yY]"
             THEN
@@ -1133,15 +1161,27 @@ FUNCTION addfun()
    THEN
       IF wk_incorrect
       THEN
-         ERROR mess[58] CLIPPED, wk_countAddSuccess USING "<<<<< & record! To be incorrected ", wk_incorrect USING "<<<<< & record."  SLEEP 1
+         IF frmtyp = "2" THEN
+            ERROR mess[58] CLIPPED, wk_countAddSuccess USING "<<<<< & record! To be incorrected ", wk_incorrect USING "<<<<< & record."  SLEEP 1
+         ELSE  
+            ERROR mess[58] CLIPPED, wk_countAddSuccess USING "<<<<< & 記錄! 不正確 ", wk_incorrect USING "<<<<< & 記錄."  SLEEP 1
+         END IF
       ELSE
-         ERROR mess[58] CLIPPED, wk_countAddSuccess USING "<<<<< & record!" SLEEP 1
+         IF frmtyp = "2" THEN
+            ERROR mess[58] CLIPPED, wk_countAddSuccess USING "<<<<< & record!" SLEEP 1
+         ELSE
+            ERROR mess[58] CLIPPED, wk_countAddSuccess USING "<<<<< & 記錄!" SLEEP 1
+         END IF
       END IF
-      CALL inqfun(FALSE)
+      CALL inqfun(FALSE) 
    ELSE
       IF wk_incorrect
       THEN
-         ERROR mess[4] CLIPPED, "! To be incorrected ", wk_incorrect USING "<<<<< & record."
+         IF frmtyp = "2" THEN
+            ERROR mess[4] CLIPPED, "! To be incorrected ", wk_incorrect USING "<<<<< & 記錄."
+         ELSE
+            ERROR mess[4] CLIPPED, "! 不正確 ", wk_incorrect USING "<<<<< & 記錄."
+         END IF
       ELSE
          ERROR mess[4] CLIPPED, "!"
       END IF
@@ -1176,7 +1216,11 @@ FUNCTION updfun()
    END IF
 
    CALL SET_COUNT(cc)
-   DISPLAY "If you prompt the row is empty, this row will be removed!" AT 23, 1
+   IF frmtyp = "2" THEN
+      DISPLAY "If you prompt the row is empty, this row will be removed!" AT 23, 1
+   ELSE  
+      DISPLAY "如果您提示該行為空，則該行將被刪除!" AT 23, 1
+   END IF
    CALL add200(TRUE, FALSE)
    IF INT_FLAG THEN
       LET INT_FLAG = FALSE
@@ -1268,15 +1312,31 @@ FUNCTION updfun()
       IF wk_incorrect
       THEN
          IF wk_countDel > 0 THEN
-            ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success!", " To be incorrected ", wk_incorrect USING "<<<<< & record and removed ", wk_countDel USING "<<<<<& empty record."  SLEEP 1
+            IF frmtyp = "2" THEN
+               ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success!", " To be incorrected ", wk_incorrect USING "<<<<< & record and removed ", wk_countDel USING "<<<<<& empty record."  SLEEP 1
+            ELSE  
+               ERROR "修改 ", wk_countUpdateSuccess USING "<<& "," 行成功!", " 不正確 ", wk_incorrect USING "<<<<< & 記錄並刪除 ", wk_countDel USING "<<<<<& 空記錄."  SLEEP 1
+            END IF
          ELSE
-            ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success!", " To be incorrected ", wk_incorrect USING "<<<<< & record."  SLEEP 1
+            IF frmtyp = "2" THEN
+               ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success!", " To be incorrected ", wk_incorrect USING "<<<<< & record."  SLEEP 1
+            ELSE
+               ERROR "修改 ", wk_countUpdateSuccess USING "<<& "," 行成功!", " 不正確 ", wk_incorrect USING "<<<<< & 記錄."  SLEEP 1
+            END IF
          END IF
       ELSE
          IF wk_countDel > 0 THEN
-            ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success! To be removed ", wk_countDel USING "<<<<<& empty record."  SLEEP 1
+            IF frmtyp = "2" THEN
+               ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success! To be removed ", wk_countDel USING "<<<<<& empty record."  SLEEP 1
+            ELSE
+               ERROR "修改 ", wk_countUpdateSuccess USING "<<& "," 行成功! 記錄並刪除 ", wk_countDel USING "<<<<<& 空記錄."  SLEEP 1
+            END IF
          ELSE
-            ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success!"  SLEEP 1
+            IF frmtyp = "2" THEN
+               ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success!"  SLEEP 1
+            ELSE
+               ERROR "修改 ", wk_countUpdateSuccess USING "<<& "," 行成功!"  SLEEP 1
+            END IF
          END IF
       END IF   
       CALL inqfun(FALSE) 
@@ -1286,29 +1346,57 @@ FUNCTION updfun()
          IF wk_flagHead
          THEN
             IF wk_countDel > 0 THEN
-               ERROR "Some datas are changed! To be incorrected ", wk_incorrect USING "<<<<<& record and removed ", wk_countDel USING "<<<<<& empty record."  SLEEP 1
+               IF frmtyp = "2" THEN
+                  ERROR "Some datas are changed! To be incorrected ", wk_incorrect USING "<<<<<& record and removed ", wk_countDel USING "<<<<<& empty record."  SLEEP 1
+               ELSE
+                  ERROR "一些數據已更改! 記錄並刪除 ", wk_incorrect USING "<<<<<& 記錄並刪除 ", wk_countDel USING "<<<<<& 空記錄."  SLEEP 1
+               END IF
             ELSE
-               ERROR "Some datas are changed! To be incorrected ", wk_incorrect USING "<<<<<& record."  SLEEP 1
+               IF frmtyp = "2" THEN
+                  ERROR "Some datas are changed! To be incorrected ", wk_incorrect USING "<<<<<& record."  SLEEP 1
+               ELSE
+                  ERROR "一些數據已更改! 記錄並刪除 ", wk_incorrect USING "<<<<<& 行."  SLEEP 1
+               END IF
             END IF
          ELSE
-            ERROR "Datas are changed! To be incorrected ", wk_incorrect USING "<<<<< & record."  SLEEP 1
+            IF frmtyp = "2" THEN
+               ERROR "Datas are changed! To be incorrected ", wk_incorrect USING "<<<<< & record."  SLEEP 1
+            ELSE
+               ERROR "資料已變更! 記錄並刪除 ", wk_incorrect USING "<<<<< & 行."  SLEEP 1
+            END IF
          END IF
          CALL inqfun(FALSE) 
       ELSE
          IF wk_flagHead
          THEN 
             IF wk_countDel > 0 THEN  
-               ERROR "Some datas are changed! To be removed ", wk_countDel USING "<<<<<& empty record."  SLEEP 1
+               IF frmtyp = "2" THEN
+                  ERROR "Some datas are changed! To be removed ", wk_countDel USING "<<<<<& empty record."  SLEEP 1
+               ELSE
+                  ERROR "一些數據已更改! 即將被刪除 ", wk_countDel USING "<<<<<& 空記錄."  SLEEP 1
+               END IF
             ELSE
-               ERROR "Some datas are changed!" SLEEP 1
+               IF frmtyp = "2" THEN
+                  ERROR "Some datas are changed!" SLEEP 1
+               ELSE
+                  ERROR "一些數據已更改!" SLEEP 1
+               END IF
             END IF
             CALL inqfun(FALSE) 
          ELSE
-            IF wk_countDel > 0 THEN  
-               ERROR "Datas are unchanged! To be removed ", wk_countDel USING "<<<<<& empty record."  SLEEP 1
+            IF wk_countDel > 0 THEN 
+               IF frmtyp = "2" THEN
+                  ERROR "Datas are unchanged! To be removed ", wk_countDel USING "<<<<<& empty record."  SLEEP 1
+               ELSE
+                  ERROR "數據不變! 即將被刪除 ", wk_countDel USING "<<<<<& 空記錄."  SLEEP 1
+               END IF
                CALL inqfun(FALSE) 
             ELSE
-               ERROR "Datas are unchanged!" SLEEP 1
+               IF frmtyp = "2" THEN
+                  ERROR "Datas are unchanged!" SLEEP 1
+               ELSE
+                  ERROR "數據不變!" SLEEP 1
+               END IF
             END IF
          END IF
       END IF
@@ -1455,7 +1543,12 @@ FUNCTION disfun()
    END IF
 
    DISPLAY mess[29] CLIPPED,mess[32] CLIPPED AT 1, 1
-   DISPLAY "Press CONTROL-Z to see errno field value." AT 22, 1
+   IF frmtyp = "2"
+   THEN
+      DISPLAY "Press CONTROL-Z to see errno field value." AT 22, 1
+   ELSE  
+      DISPLAY "按CONTROL-Z查看errno字段值." AT 22, 1
+   END IF
    LET cc = 1
    CALL openCursorStd()
    WHILE TRUE
@@ -1621,10 +1714,15 @@ FUNCTION prtfun()
    IF cc >=0 THEN
       CALL Cprint(rep_na,"Y")  
    ELSE
-      DISPLAY "Rows :      " AT 22,1
+      IF frmtyp = "2"
+      THEN
+         DISPLAY "Rows :      " AT 22,1
+      ELSE
+         DISPLAY "筆數 :      " AT 22,1
+      END IF
       ERROR mess[09] CLIPPED
    END IF
-END FUNCTION
+END FUNCTION 
 #------------------------------------------------------------------------------
 REPORT fo223av(P, R)
    DEFINE Head_B    CHAR(30)

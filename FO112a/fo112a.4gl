@@ -340,15 +340,27 @@ FUNCTION addfun() -- Function for create new records
    IF wk_countAddSuccess > 0 THEN
       IF wk_duplicate
       THEN 
-         ERROR mess[58] CLIPPED, wk_countAddSuccess USING "<<<<< & record! To be Duplicated ", wk_duplicate USING "<<<<< & record." SLEEP 1
+         IF frmtyp = "2" THEN
+            ERROR mess[58] CLIPPED, wk_countAddSuccess USING "<<<<< & record! To be Duplicated ", wk_duplicate USING "<<<<< & record." SLEEP 1
+         ELSE
+            ERROR mess[58] CLIPPED, wk_countAddSuccess USING "<<<<< & 記錄! 要復制 ", wk_duplicate USING "<<<<< & 記錄." SLEEP 1
+         END IF
       ELSE
-         ERROR mess[58] CLIPPED, wk_countAddSuccess USING "<<<<< & record!" SLEEP 1
+         IF frmtyp = "2" THEN
+            ERROR mess[58] CLIPPED, wk_countAddSuccess USING "<<<<< & record!" SLEEP 1
+         ELSE
+            ERROR mess[58] CLIPPED, wk_countAddSuccess USING "<<<<< & 記錄!" SLEEP 1
+         END IF
       END IF
       CALL inqfun(FALSE)
    ELSE
       IF wk_duplicate
       THEN 
-         ERROR mess[4] CLIPPED, "! To be Duplicated ", wk_duplicate USING "<<<<< & record."
+         IF frmtyp = "2" THEN
+            ERROR mess[4] CLIPPED, "! To be Duplicated ", wk_duplicate USING "<<<<< & record."
+         ELSE  
+            ERROR mess[4] CLIPPED, "! 要復制 ", wk_duplicate USING "<<<<< & 記錄."
+         END IF
       ELSE
          ERROR mess[4] CLIPPED, "!"
       END IF
@@ -450,7 +462,11 @@ FUNCTION add200(iv_option, iv_option1) -- Function for user input on fields on t
             DISPLAY "This row is ", aln USING "<<#"," row" AT 22, 1
          END IF
       BEFORE FIELD kind -- The logic execute before cursor to this field
-         ERROR "Values are only 'F', 'Y', 'N' and 'G'!"
+         IF frmtyp = "2" THEN
+            ERROR "Values are only 'F', 'Y', 'N' and 'G'!"
+         ELSE
+            ERROR "值僅是 'F', 'Y', 'N' 和 'G'!"
+         END IF
       ON KEY (CONTROL-Z) -- press button to come back fields on form
          IF NOT iv_option1
          THEN
@@ -466,7 +482,11 @@ FUNCTION add200(iv_option, iv_option1) -- Function for user input on fields on t
       ON KEY (CONTROL-O) -- press this button to delete present row
          IF iv_option1
          THEN
-            PROMPT "Do you really want to remove this record (y/Y for Yes, another for No)? " FOR wk_prompt
+            IF frmtyp = "2" THEN
+               PROMPT "Do you really want to remove this record (y/Y for Yes, another for No)? " FOR wk_prompt
+            ELSE
+               PROMPT "您是否真的要刪除此記錄 (y/Y 為是, 另一個為否)? " FOR wk_prompt
+            END IF
             IF wk_prompt MATCHES "[yY]"
             THEN
                BEGIN WORK
@@ -487,7 +507,11 @@ FUNCTION add200(iv_option, iv_option1) -- Function for user input on fields on t
       ON KEY (CONTROL-M) -- press button to delete all row on present table screen
          IF iv_option1
          THEN
-            PROMPT "Do you really want to remove all record (y/Y for Yes, another for No)? " FOR wk_prompt
+            IF frmtyp = "2" THEN
+               PROMPT "Do you really want to remove all record (y/Y for Yes, another for No)? " FOR wk_prompt
+            ELSE
+               PROMPT "您是否真的要刪除所有記錄 (y / y為是，另一個為no)? " FOR wk_prompt
+            END IF
             IF wk_prompt MATCHES "[yY]"
             THEN
                LET cnt1 = 0
@@ -526,7 +550,11 @@ FUNCTION add200(iv_option, iv_option1) -- Function for user input on fields on t
                   IF P1[aln].kind NOT MATCHES "[FYNG]" 
                   THEN
                      NEXT FIELD kind
-                     ERROR "Values are only 'F', 'Y', 'N' and 'G'!"
+                     IF frmtyp = "2" THEN
+                        ERROR "Values are only 'F', 'Y', 'N' and 'G'!"
+                     ELSE
+                        ERROR "值僅是 'F', 'Y', 'N' 和 'G'!"
+                     END IF
                   ELSE
                      IF P1[aln].kind MATCHES "[Y]" 
                      THEN
@@ -605,7 +633,11 @@ FUNCTION add200(iv_option, iv_option1) -- Function for user input on fields on t
                      IF P1[aln].kind NOT MATCHES "[FYNG]" 
                      THEN
                         NEXT FIELD kind
-                        ERROR "Values are only 'F', 'Y', 'N' and 'G'!"
+                        IF frmtyp = "2" THEN
+                           ERROR "Values are only 'F', 'Y', 'N' and 'G'!"
+                        ELSE
+                           ERROR "值僅是 'F', 'Y', 'N' 和 'G'!"
+                        END IF
                      ELSE  
                         IF P1[aln].kind MATCHES "[Y]" 
                         THEN
@@ -668,9 +700,17 @@ FUNCTION add200(iv_option, iv_option1) -- Function for user input on fields on t
             END IF
          ELSE
             IF iv_option1 THEN -- TRUE, prompt for delete. FALSE, prompt for add and update.
-               PROMPT "Do you really want to exit delete fucntion (y/Y for Yes, another for No)? " FOR wk_prompt
+               IF frmtyp = "2" THEN
+                  PROMPT "Do you really want to exit delete fucntion (y/Y for Yes, another for No)? " FOR wk_prompt
+               ELSE
+                  PROMPT "您是否真的要退出刪除功能 (y / y表示是，另一個表示否)? " FOR wk_prompt
+               END IF
             ELSE
-               PROMPT "Do you really want to cancle input (y/Y for Yes, another for No)? " FOR wk_prompt
+               IF frmtyp = "2" THEN
+                  PROMPT "Do you really want to cancel input (y/Y for Yes, another for No)? " FOR wk_prompt
+               ELSE
+                  PROMPT "您是否真的要取消輸入 (y / y表示是，另一個表示否)? " FOR wk_prompt
+               END IF
             END IF
             IF wk_prompt NOT MATCHES "[yY]"
             THEN
@@ -713,7 +753,11 @@ FUNCTION updfun() -- Function for update
    END IF
 
    CALL SET_COUNT(cc) -- set max of record that user can input
-   DISPLAY "If you prompt the row is empty, this row will be removed!" AT 21, 1
+   IF frmtyp = "2" THEN
+      DISPLAY "If you prompt the row is empty, this row will be removed!" AT 21, 1
+   ELSE
+      DISPLAY "如果您提示該行為空，則該行將被刪除!" AT 21, 1
+   END IF
    CALL add200(TRUE, FALSE)
    IF INT_FLAG THEN
       LET INT_FLAG = FALSE
@@ -779,15 +823,31 @@ FUNCTION updfun() -- Function for update
       IF wk_duplicate
       THEN 
       IF wk_countDel > 0 THEN
-            ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success!", " To be Duplicated ", wk_duplicate USING "<<<<< & record. To be removed ", wk_countDel USING "<<<<< & record." SLEEP 1
+            IF frmtyp = "2" THEN
+               ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success!", " To be Duplicated ", wk_duplicate USING "<<<<< & record. To be removed ", wk_countDel USING "<<<<< & record." SLEEP 1
+            ELSE
+               ERROR "修改 ", wk_countUpdateSuccess USING "<<& "," 行成功!", " 要復制 ", wk_duplicate USING "<<<<< & 行. 即將被刪除 ", wk_countDel USING "<<<<< & 行." SLEEP 1
+            END IF
          ELSE
-            ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success!", " To be Duplicated ", wk_duplicate USING "<<<<< & record." SLEEP 1
+            IF frmtyp = "2" THEN
+               ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success!", " To be Duplicated ", wk_duplicate USING "<<<<< & record." SLEEP 1
+            ELSE
+               ERROR "修改 ", wk_countUpdateSuccess USING "<<& "," 行成功!", " 要復制 ", wk_duplicate USING "<<<<< & 行." SLEEP 1
+            END IF
          END IF
       ELSE
          IF wk_countDel > 0 THEN
-            ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success! To be removed ", wk_countDel USING "<<<<< & record." SLEEP 1
+            IF frmtyp = "2" THEN
+               ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success! To be removed ", wk_countDel USING "<<<<< & record." SLEEP 1
+            ELSE
+               ERROR "修改 ", wk_countUpdateSuccess USING "<<& "," 行成功! 即將被刪除 ", wk_countDel USING "<<<<< & 行." SLEEP 1
+            END IF
          ELSE
-            ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success!" SLEEP 1
+            IF frmtyp = "2" THEN
+               ERROR "Modify ", wk_countUpdateSuccess USING "<<& "," row success!" SLEEP 1
+            ELSE
+               ERROR "修改 ", wk_countUpdateSuccess USING "<<& "," 行成功!" SLEEP 1
+            END IF
          END IF
       END IF
       CALL reopen() 
@@ -795,17 +855,33 @@ FUNCTION updfun() -- Function for update
       IF wk_duplicate
       THEN 
          IF wk_countDel > 0 THEN
-            ERROR "Datas are unchanged! To be Duplicated ", wk_duplicate USING "<<<<< & record. To be removed ", wk_countDel USING "<<<<< & record." SLEEP 1
+            IF frmtyp = "2" THEN
+               ERROR "Datas are unchanged! To be Duplicated ", wk_duplicate USING "<<<<< & record. To be removed ", wk_countDel USING "<<<<< & record." SLEEP 1
+            ELSE
+               ERROR "數據不變! 要復制 ", wk_duplicate USING "<<<<< & 行. 即將被刪除 ", wk_countDel USING "<<<<< & 行." SLEEP 1
+            END IF
          ELSE
-            ERROR "Datas are unchanged! To be Duplicated ", wk_duplicate USING "<<<<< & record." SLEEP 1
+            IF frmtyp = "2" THEN
+               ERROR "Datas are unchanged! To be Duplicated ", wk_duplicate USING "<<<<< & record." SLEEP 1
+            ELSE
+               ERROR "數據不變! 要復制 ", wk_duplicate USING "<<<<< & 行." SLEEP 1
+            END IF
          END IF
          CALL reopen()
       ELSE
-      IF wk_countDel > 0 THEN
-         ERROR "Datas are unchanged!. To be removed ", wk_countDel USING "<<<<< & record." SLEEP 1
+         IF wk_countDel > 0 THEN
+            IF frmtyp = "2" THEN
+               ERROR "Datas are unchanged!. To be removed ", wk_countDel USING "<<<<< & record." SLEEP 1
+            ELSE
+               ERROR "數據不變!. 即將被刪除 ", wk_countDel USING "<<<<< & 行." SLEEP 1
+            END IF
             CALL reopen()
          ELSE
-            ERROR "Datas are unchanged!" SLEEP 1
+            IF frmtyp = "2" THEN
+               ERROR "Datas are unchanged!" SLEEP 1
+            ELSE
+               ERROR "數據不變!" SLEEP 1
+            END IF
          END IF
       END IF
    END IF
