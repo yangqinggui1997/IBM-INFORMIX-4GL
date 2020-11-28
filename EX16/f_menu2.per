@@ -1,0 +1,18 @@
+DATABASE formonly
+SCREEN
+{
+ [f000 ]
+ [x|f1 ] [f02 ]
+ [x|f1 ] [f02 ]
+ [x|f1 ] [f02 ]
+ [x|f1 ] [f02 ]
+ [x|f1 ] [f02 ]
+}
+ATTRIBUTES
+f000 = formonly.menu_title;
+x = formonly.x;
+f1 = formonly.option_num, NOENTRY;
+f02 = formonly.option_name, NOENTRY;
+INSTRUCTIONS
+ 	DELIMITERS " "
+	SCREEN RECORD sa_menu[5](formonly.x THRU formonly.option_name)

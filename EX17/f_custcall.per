@@ -1,0 +1,30 @@
+DATABASE test4GL
+SCREEN
+{
+ Customer Number: [f000 ] Company Name :[f001 ]
+ Call Received at: [f002 ][f3] [f004 ]
+ Received By: [f005 ]
+ Call Code (B/D/I/L/O): [a]
+ Call Description: [b]
+ Call Resolved on: [f006 ][f7] [f008 ]
+ Call Resolution: [c]
+}
+TABLES
+customer
+cust_calls
+ATTRIBUTES
+f000 = cust_calls.customer_num;
+f001 = customer.company;
+f002 = formonly.call_time TYPE CHAR, AUTONEXT, PICTURE = "##:##";
+f3 = formonly._amPm1 TYPE CHAR, AUTONEXT, UPSHIFT, PICTURE = "XM";
+f004 = formonly._yrMon1 TYPE DATE, DEFAULT = TODAY;
+f005 = cust_calls.user_id;
+a = cust_calls.call_code, INCLUDE = ("B", "D", "I", "L", "O"),
+ UPSHIFT, AUTONEXT;
+b = formonly.call_flag TYPE CHAR, INCLUDE = ("Y", "N"), UPSHIFT;
+f006 = formonly.res_time TYPE CHAR, AUTONEXT, PICTURE = "##:##";
+f7 = formonly._amPm2 TYPE CHAR, AUTONEXT, UPSHIFT, PICTURE = "XM";
+f008 = formonly._yrMon2 TYPE DATE, DEFAULT = TODAY;
+c = formonly.res_flag TYPE CHAR, INCLUDE = ("Y", "N"), UPSHIFT;
+INSTRUCTIONS
+ DELIMITERS " "
